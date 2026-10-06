@@ -24,7 +24,7 @@ pnpm e2e:install && pnpm e2e   # Playwright against the production build
 pnpm verify         # lint + types + tests + build + e2e
 pnpm icons          # regenerate PWA icons from public/favicon.svg
 ```
-
+ 
 Adding a formula: see `.claude/skills/add-formula/SKILL.md`. Progress and backlog: `docs/TASKS.md`.
 
 ## Deployment (GitHub Pages)
