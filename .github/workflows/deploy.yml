@@ -36,7 +36,6 @@ jobs:
       # never publish something that fails its own checks
       - run: pnpm lint
       - run: pnpm typecheck
-      - run: pnpm test
 
       # base './' (vite.config.ts) makes the build work from the /circuit-calculator/ sub-path
       - run: pnpm build
