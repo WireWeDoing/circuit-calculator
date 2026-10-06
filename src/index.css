@@ -9,7 +9,7 @@ body { margin: 0; min-height: 100dvh; overscroll-behavior-y: none; }
 /* ───────── sidebar tree (plain CSS: ~140 rows must stay cheap) ───────── */
 .nav-tree { font-size: 0.95rem; color: var(--nav-text); }
 .nav-list { list-style: none; margin: 0; padding: 0; }
-.nav-parent, .nav-group { position: relative; }
+.nav-parent { position: relative; }
 .nav-row { display: flex; align-items: center; gap: 0; box-sizing: border-box; width: 100%; min-height: 44px; padding: 4px 56px 4px 16px; color: inherit; text-decoration: none; background: none; border: 0; text-align: left; font: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .nav-row:hover { background: var(--nav-hover); }
 .nav-row.is-current { background: var(--nav-selected); box-shadow: inset 4px 0 0 var(--nav-bar); }
@@ -19,10 +19,12 @@ body { margin: 0; min-height: 100dvh; overscroll-behavior-y: none; }
 .nav-icon { flex: 0 0 40px; display: inline-flex; color: var(--nav-muted); }
 .nav-icon-section svg { width: 24px; height: 24px; fill: currentColor; }
 .is-current .nav-icon { color: var(--nav-bar); }
-.nav-leaf { padding-left: 40px; padding-right: 12px; }
+.nav-leaf { padding-left: 52px; padding-right: 12px; } /* leaves sit under a chapter row */
 .nav-leaf .nav-text { font-size: 0.85rem; }
-.nav-group .nav-row { padding-left: 24px; font-size: 0.85rem; font-weight: 600; color: var(--nav-muted); }
-.nav-group + .nav-list .nav-leaf { padding-left: 40px; }
+.nav-part { font-weight: 700; }
+.nav-chapter { padding-left: 28px; font-size: 0.9rem; }
+.nav-chapter .nav-icon { flex-basis: 36px; }
+.nav-num { color: var(--nav-muted); font-variant-numeric: tabular-nums; margin-right: 2px; }
 .nav-chev { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; border: 0; background: none; color: var(--nav-muted); border-radius: 50%; cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .nav-chev:hover { background: var(--nav-hover); }
 .nav-foot { margin: 0; padding: 8px 16px; font-size: 0.75rem; color: var(--nav-muted); }
@@ -48,3 +50,18 @@ body { margin: 0; min-height: 100dvh; overscroll-behavior-y: none; }
 .mode-tab:hover { background: var(--nav-hover); }
 .mode-tab[aria-selected="true"] { color: var(--nav-bar); border-bottom-color: var(--nav-bar); font-weight: 700; }
 .mode-tab:focus-visible { outline: 3px solid var(--nav-bar); outline-offset: -3px; }
+
+/* book navigation: previous / next pages, breadcrumbs */
+.prev-next { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 24px; }
+.prev-next-link { display: flex; flex-direction: column; gap: 2px; min-height: 64px; padding: 10px 14px; border: 1px solid var(--thumb-border, rgba(128,128,128,0.35)); border-radius: 12px; color: var(--ink); text-decoration: none; background: var(--paper); min-width: 0; -webkit-tap-highlight-color: transparent; }
+.prev-next-link.is-next { text-align: right; }
+.prev-next-link:hover { background: var(--nav-hover); }
+.prev-next-link:focus-visible { outline: 3px solid var(--nav-bar); outline-offset: 2px; }
+.prev-next-dir { font-size: 0.8rem; color: var(--muted); }
+.prev-next-title { font-weight: 600; overflow-wrap: anywhere; }
+.crumb { color: inherit; text-decoration: none; }
+.crumb:hover, .crumb:focus-visible { text-decoration: underline; }
+.title-num { color: var(--accent); }
+.article-list { margin: 0 0 8px; padding-left: 1.3em; }
+.article-list li { margin: 4px 0; }
+.article-visual { margin: 8px 0; }

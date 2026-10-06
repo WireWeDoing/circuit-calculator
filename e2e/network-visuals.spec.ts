@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'
+import { CHAPTERS } from '../src/learn/book.ts'
 import { noHorizontalScroll, overlappingLabels, watchErrors } from './helpers.ts'
 
 /**
@@ -18,7 +19,7 @@ const diagram = (page: Page) => page.locator('main svg[role="img"]').first()
 test.describe('parallel resistors', () => {
   test('diagram shows one branch per row, with values, then current per branch', async ({ page }) => {
     const w = watchErrors(page)
-    await page.goto('/#/f/r-parallel-n')
+    await page.goto('/#/topic/r-parallel-n')
     await expect(parts(page)).toHaveCount(2)
     await page.getByRole('button', { name: 'Add another' }).click()
     await expect(parts(page)).toHaveCount(3) // grows even before a value is typed
@@ -39,7 +40,7 @@ test.describe('parallel resistors', () => {
   })
 
   test('ten branches stay readable and inside the screen', async ({ page }) => {
-    await page.goto('/#/f/r-parallel-n')
+    await page.goto('/#/topic/r-parallel-n')
     await page.getByTestId('mode-withV').click()
     await fillRows(page, ['100', '220', '330', '470', '680', '1000', '2200', '4700', '10000', '47000'])
     await page.getByTestId('in-V').fill('9')
@@ -59,7 +60,7 @@ const arrowDirs = (page: Page) => page.locator('main svg[role="img"] [data-testi
 test.describe('current-flow arrows', () => {
   test('arrows sit next to each part with its value; switch to electron flow reverses them', async ({ page }) => {
     const w = watchErrors(page)
-    await page.goto('/#/f/r-parallel-n')
+    await page.goto('/#/topic/r-parallel-n')
     await page.getByTestId('mode-withV').click()
     await fillRows(page, ['1000', '2000', '2000', '500'])
     await page.getByTestId('in-V').fill('5')
@@ -76,7 +77,7 @@ test.describe('current-flow arrows', () => {
 
   for (const [id, mode] of [['p1-unknown-parallel', 'A'], ['p2-series-parallel', 'A'], ['p3-unknown-series', 'I'], ['p4-thevenin', 'divider'], ['p5-millman', 'V'], ['p13-several-leds', 'R'], ['p14-zener', 'R'], ['p20-internal-resistance', 'Rint'], ['led-resistor', 'R'], ['p17-bjt-switch', 'RB'], ['voltage-divider', 'Vout'], ['current-divider', 'I1']] as const) {
     test(`${id}: arrows with values, nothing overlapping or clipped`, async ({ page }) => {
-      await page.goto(`/#/f/${id}`)
+      await page.goto(`/#/topic/${id}`)
       const tab = page.getByTestId(`mode-${mode}`)
       if (await tab.count()) await tab.click()
       await page.getByTestId('use-example').click()
@@ -97,7 +98,7 @@ test.describe('current-flow arrows', () => {
 
 test.describe('series resistors', () => {
   test('voltage drop on each part; chain wraps onto a second row after five', async ({ page }) => {
-    await page.goto('/#/f/r-series')
+    await page.goto('/#/topic/r-series')
     await page.getByTestId('mode-withV').click()
     await fillRows(page, ['1000', '1000', '1000', '1000', '1000', '1000', '1000', '1000'])
     await page.getByTestId('in-V').fill('8')
@@ -111,7 +112,7 @@ test.describe('series resistors', () => {
 
   test('on a phone the diagram sits between the inputs and the result', async ({ page, isMobile }) => {
     test.skip(!isMobile, 'mobile only')
-    await page.goto('/#/f/r-series')
+    await page.goto('/#/topic/r-series')
     await page.getByTestId('use-example').click()
     const y = async (sel: string) => (await page.locator(sel).first().boundingBox())!.y
     const inputs = await y('[data-testid="in-R-0"]'), svg = await y('main svg[role="img"]'), result = await y('[data-testid="result"]')
@@ -122,7 +123,7 @@ test.describe('series resistors', () => {
 
 test.describe('capacitors', () => {
   test('series: same charge, voltage split', async ({ page }) => {
-    await page.goto('/#/f/c-series')
+    await page.goto('/#/topic/c-series')
     await page.getByTestId('mode-withV').click()
     await fillRows(page, ['10', '10'])
     await page.getByTestId('unit-in-C-0').selectOption('µF'); await page.getByTestId('unit-in-C-1').selectOption('µF')
@@ -133,8 +134,8 @@ test.describe('capacitors', () => {
 })
 
 test.describe('thumbnails', () => {
-  test('section list rows show a picture each', async ({ page }) => {
-    await page.goto('/#/s/s2')
+  test('chapter list rows show a picture each', async ({ page }) => {
+    await page.goto('/#/chapter/resistors')
     const items = page.getByRole('list', { name: /Topics in/ }).getByRole('listitem')
     const n = await items.count()
     expect(n).toBeGreaterThan(4)
@@ -148,7 +149,7 @@ test.describe('thumbnails', () => {
 
   test('home cards show a picture each', async ({ page }) => {
     await page.goto('/')
-    await expect(page.locator('[data-testid^="thumb-section-"] svg')).toHaveCount(18)
+    await expect(page.locator('[data-testid^="thumb-chapter-"] svg')).toHaveCount(CHAPTERS.length)
   })
 })
 
@@ -156,14 +157,14 @@ test.describe('accessibility of the new UI', () => {
   for (const scheme of ['light', 'dark'] as const) {
     test(`axe: breakdown table + diagram (${scheme})`, async ({ page }) => {
       await page.emulateMedia({ colorScheme: scheme })
-      await page.goto('/#/f/r-parallel-n')
+      await page.goto('/#/topic/r-parallel-n')
       await page.getByTestId('mode-withV').click()
       await fillRows(page, ['1000', '2000', '2000', '500'])
       await page.getByTestId('in-V').fill('5')
       await expect(page.getByTestId('breakdown')).toBeVisible()
       const res = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze()
       expect(res.violations.map((v) => `${v.id}: ${v.help} ${v.nodes[0]?.html.slice(0, 140)} ${JSON.stringify(v.nodes[0]?.any[0]?.data ?? {}).slice(0, 160)}`)).toEqual([])
-      await page.goto('/#/s/s3')
+      await page.goto('/#/chapter/capacitors')
       await expect(page.locator('[data-testid^="thumb-"]').first()).toBeVisible()
       const res2 = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze()
       expect(res2.violations.map((v) => `${v.id}: ${v.help} ${v.nodes[0]?.html.slice(0, 140)} ${JSON.stringify(v.nodes[0]?.any[0]?.data ?? {}).slice(0, 160)}`)).toEqual([])
@@ -177,19 +178,19 @@ test.describe('visual regression (desktop Chromium)', () => {
   const shot = { maxDiffPixelRatio: 0.02, animations: 'disabled' as const }
 
   test('parallel ×4 with supply', async ({ page }) => {
-    await page.goto('/#/f/r-parallel-n'); await page.getByTestId('mode-withV').click()
+    await page.goto('/#/topic/r-parallel-n'); await page.getByTestId('mode-withV').click()
     await fillRows(page, ['1000', '2000', '2000', '500']); await page.getByTestId('in-V').fill('5')
     await expect(page.getByTestId('breakdown')).toBeVisible()
     await expect(diagram(page)).toHaveScreenshot('parallel-4.png', shot)
     await expect(page.getByTestId('breakdown')).toHaveScreenshot('breakdown-parallel-4.png', shot)
   })
   test('parallel ×10', async ({ page }) => {
-    await page.goto('/#/f/r-parallel-n'); await page.getByTestId('mode-withV').click()
+    await page.goto('/#/topic/r-parallel-n'); await page.getByTestId('mode-withV').click()
     await fillRows(page, ['100', '220', '330', '470', '680', '1000', '2200', '4700', '10000', '47000']); await page.getByTestId('in-V').fill('9')
     await expect(diagram(page)).toHaveScreenshot('parallel-10.png', shot)
   })
   test('series ×4 and ×8', async ({ page }) => {
-    await page.goto('/#/f/r-series'); await page.getByTestId('mode-withV').click()
+    await page.goto('/#/topic/r-series'); await page.getByTestId('mode-withV').click()
     await fillRows(page, ['1000', '470', '2200', '330']); await page.getByTestId('in-V').fill('9')
     await expect(diagram(page)).toHaveScreenshot('series-4.png', shot)
     await fillRows(page, ['1000', '470', '2200', '330', '100', '4700', '680', '220']); await page.getByTestId('in-V').fill('12')
@@ -197,7 +198,7 @@ test.describe('visual regression (desktop Chromium)', () => {
   })
   for (const [id, mode] of [['p2-series-parallel', 'A'], ['p5-millman', 'V'], ['led-resistor', 'R'], ['p17-bjt-switch', 'RB']] as const) {
     test(`circuit with arrows: ${id}`, async ({ page }) => {
-      await page.goto(`/#/f/${id}`)
+      await page.goto(`/#/topic/${id}`)
       const tab = page.getByTestId(`mode-${mode}`)
       if (await tab.count()) await tab.click()
       await page.getByTestId('use-example').click()
@@ -205,14 +206,14 @@ test.describe('visual regression (desktop Chromium)', () => {
     })
   }
   test('series capacitors', async ({ page }) => {
-    await page.goto('/#/f/c-series'); await page.getByTestId('mode-withV').click()
+    await page.goto('/#/topic/c-series'); await page.getByTestId('mode-withV').click()
     await fillRows(page, ['10', '22', '47']); for (let i = 0; i < 3; i++) await page.getByTestId(`unit-in-C-${i}`).selectOption('µF')
     await page.getByTestId('in-V').fill('12')
     await expect(diagram(page)).toHaveScreenshot('series-c-3.png', shot)
   })
-  test('section list with thumbnails', async ({ page }) => {
-    await page.goto('/#/s/s2')
+  test('chapter list with thumbnails', async ({ page }) => {
+    await page.goto('/#/chapter/resistors')
     await expect(page.locator('[data-testid^="thumb-"]').first()).toBeVisible()
-    await expect(page.getByRole('list', { name: /Topics in/ })).toHaveScreenshot('section-list.png', shot)
+    await expect(page.getByRole('list', { name: /Topics in/ })).toHaveScreenshot('chapter-list.png', shot)
   })
 })

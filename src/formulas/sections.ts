@@ -1,6 +1,9 @@
 import type { Section } from '../core/types.ts'
 
-/** hero = formula whose diagram is the section's picture on the home page */
+/**
+ * The cheat sheet's own sections (§0–§17). Navigation follows the book (src/learn/book.ts); these are kept so each
+ * topic can show where it comes from, and so old #/s/<id> links can be redirected (hero → its chapter).
+ */
 export const SECTIONS: Section[] = [
   { id: 's0', hero: 'units-and-prefixes', number: '0', title: 'Units, Prefixes & Conversions', blurb: 'Read this first: convert to base units before you calculate.' },
   { id: 's1', hero: 'ohms-law', number: '1', title: "Ohm's Law & Power", blurb: 'Voltage, current, resistance and the heat they make.' },
@@ -19,13 +22,5 @@ export const SECTIONS: Section[] = [
   { id: 's14', hero: 'microstrip-z0', number: '14', title: 'PCB Layout & Signal Integrity', blurb: 'Trace current, impedance, delay and skin depth.' },
   { id: 's15', hero: 'battery-energy', number: '15', title: 'Batteries & Power Storage', blurb: 'Capacity, C-rate, runtime and voltage sag.' },
   { id: 's16', hero: 'vswr', number: '16', title: 'RF & Antennas', blurb: 'Antenna length, path loss, VSWR and dBm.' },
-  { id: 's17', hero: 'p8-wheatstone', groups: [
-    { id: 'g17-method', title: 'Method & reverse formulas' },
-    { id: 'g17-1', title: '17.1 Resistor networks' },
-    { id: 'g17-2', title: '17.2 Voltage dividers, sensors and bridges' },
-    { id: 'g17-3', title: '17.3 Capacitors, inductors and timing' },
-    { id: 'g17-4', title: '17.4 LEDs, Zener diodes and power supplies' },
-    { id: 'g17-5', title: '17.5 Transistor circuits' },
-    { id: 'g17-6', title: '17.6 Batteries and sources' },
-  ], number: '17', title: 'Solving Circuits', blurb: 'Find unknown values: 21 guided problems with step-by-step methods.' },
+  { id: 's17', hero: 'solving-method', number: '17', title: 'Solving Circuits', blurb: 'Find unknown values: 21 guided problems with step-by-step methods.' },
 ]

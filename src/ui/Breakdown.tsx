@@ -1,5 +1,5 @@
+import { AnchorCard } from './anchors.tsx'
 import { ScrollX } from './ScrollX.tsx'
-import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
 import Table from '@mui/material/Table'
 import TableBody from '@mui/material/TableBody'
@@ -23,7 +23,7 @@ export function Breakdown({ rows, share, sums }: { rows: BreakdownRow[]; share: 
   const hasShare = rows.some((r) => r.share !== undefined)
   const additive = (c: Col) => sums.includes(c.key)
   return (
-    <Card variant="outlined">
+    <AnchorCard id="breakdown" label="Each part in detail">
       <CardContent>
         <Typography component="h2" variant="h3" gutterBottom>Each part in detail</Typography>
         <ScrollX label="Per-component breakdown, scrolls sideways">
@@ -57,6 +57,6 @@ export function Breakdown({ rows, share, sums }: { rows: BreakdownRow[]; share: 
           </Table>
         </ScrollX>
       </CardContent>
-    </Card>
+    </AnchorCard>
   )
 }

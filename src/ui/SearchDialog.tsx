@@ -9,9 +9,8 @@ import ListItemIcon from '@mui/material/ListItemIcon'
 import Typography from '@mui/material/Typography'
 import TextField from '@mui/material/TextField'
 import useMediaQuery from '@mui/material/useMediaQuery'
-import { SECTIONS } from '../formulas/index.ts'
-import { normalize, search, type SearchEntry } from '../formulas/search.ts'
-import { SECTION_ICONS } from './icons.tsx'
+import { normalize, search, searchIndex, type SearchEntry } from '../formulas/search.ts'
+import { BOOK_ICONS } from './icons.tsx'
 import { TopicIcon } from './topicIcons.tsx'
 
 /** the part of `title` that matches the query is shown in bold */
@@ -26,7 +25,7 @@ function Highlighted({ title, query }: { title: string; query: string }) {
   return <>{parts.map((p, i) => (p.on ? <Box key={i} component="mark" sx={{ bgcolor: 'transparent', color: 'primary.main', fontWeight: 800 }}>{p.text}</Box> : <span key={i}>{p.text}</span>))}</>
 }
 
-/** Search-by-title dialog. Sections and topics; arrow keys + Enter; Esc closes. */
+/** Search-by-title dialog. Parts, chapters and topics; arrow keys + Enter; Esc closes. */
 export function SearchDialog({ open, onClose, onOpenResult }: { open: boolean; onClose: () => void; onOpenResult?: () => void }) {
   const fullScreen = useMediaQuery('(max-width: 599.95px)')
   const [query, setQuery] = useState('')
@@ -36,8 +35,8 @@ export function SearchDialog({ open, onClose, onOpenResult }: { open: boolean; o
 
   const hits = useMemo(() => search(query), [query])
   const browsing = !query.trim()
-  // with no query: show the sections as a starting point
-  const entries: SearchEntry[] = useMemo(() => (browsing ? SECTIONS.map((s) => ({ kind: 'section' as const, id: s.id, title: `${s.number}. ${s.title}`, href: `#/s/${s.id}`, key: '', parentKey: '' })) : hits), [browsing, hits])
+  // with no query: show the chapters as a starting point
+  const entries: SearchEntry[] = useMemo(() => (browsing ? searchIndex().filter((e) => e.kind === 'chapter') : hits), [browsing, hits])
   const safeActive = Math.min(active, Math.max(entries.length - 1, 0))
 
   useEffect(() => { listRef.current?.querySelector('[aria-selected="true"]')?.scrollIntoView?.({ block: 'nearest' }) }, [safeActive, entries])
@@ -59,7 +58,7 @@ export function SearchDialog({ open, onClose, onOpenResult }: { open: boolean; o
     <Dialog open={open} onClose={onClose} fullScreen={fullScreen} fullWidth maxWidth="sm" aria-labelledby={`${listId}-title`}
       slotProps={{ transition: { onExited: () => { setQuery(''); setActive(0) } }, paper: { sx: fullScreen ? {} : { position: 'fixed', top: 72, m: 0, maxHeight: 'calc(100% - 96px)' } } }}>
       <Box sx={{ p: 2, pb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
-        <Typography id={`${listId}-title`} component="h2" className="sr-only">Search sections and topics</Typography>
+        <Typography id={`${listId}-title`} component="h2" className="sr-only">Search chapters and topics</Typography>
         <TextField
           autoFocus fullWidth type="search" label="Search by title" placeholder="e.g. capacitors, ohm, 555, LED…"
           value={query} onChange={(e) => { setQuery(e.target.value); setActive(0) }} onKeyDown={onKeyDown}
@@ -71,27 +70,27 @@ export function SearchDialog({ open, onClose, onOpenResult }: { open: boolean; o
         <IconButton aria-label="Close search" onClick={onClose} data-testid="search-close"><CloseIcon /></IconButton>
       </Box>
       <Typography role="status" variant="caption" color="text.secondary" sx={{ px: 2.5 }} data-testid="search-status">
-        {browsing ? 'Type to search section and topic titles — or pick a section.' : `${hits.length} result${hits.length === 1 ? '' : 's'}`}
+        {browsing ? 'Type to search chapter and topic titles — or pick a chapter.' : `${hits.length} result${hits.length === 1 ? '' : 's'}`}
       </Typography>
-      <Box component="ul" id={listId} ref={listRef} role="listbox" aria-label={browsing ? 'Sections' : 'Search results'} data-testid="search-results" sx={{ listStyle: 'none', m: 0, p: 1, overflowY: 'auto', flex: 1 }}>
+      <Box component="ul" id={listId} ref={listRef} role="listbox" aria-label={browsing ? 'Chapters' : 'Search results'} data-testid="search-results" sx={{ listStyle: 'none', m: 0, p: 1, overflowY: 'auto', flex: 1 }}>
         {entries.map((e, i) => {
           const selected = i === safeActive
-          const SectionIcon = e.kind === 'section' ? SECTION_ICONS[e.id] : undefined
+          const BookIcon = e.kind === 'topic' ? undefined : BOOK_ICONS[e.id]
           return (
             <Box component="li" key={`${e.kind}-${e.id}`} id={`${listId}-${i}`} role="option" aria-selected={selected} data-testid={`result-${e.kind}-${e.id}`}
               onMouseMove={() => setActive(i)} onClick={() => go(e)}
               sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 1.5, minHeight: 52, py: 0.75, borderRadius: 2, cursor: 'pointer', bgcolor: selected ? 'action.selected' : 'transparent', boxShadow: selected ? (t) => `inset 4px 0 0 ${t.palette.primary.main}` : 'none' }}>
-              <ListItemIcon sx={{ minWidth: 40, color: 'text.secondary' }}>{e.kind === 'section' ? (SectionIcon ? <SectionIcon aria-hidden="true" /> : null) : <TopicIcon id={e.id} size={28} />}</ListItemIcon>
+              <ListItemIcon sx={{ minWidth: 40, color: 'text.secondary' }}>{e.kind === 'topic' ? <TopicIcon id={e.id} size={28} /> : BookIcon ? <BookIcon aria-hidden="true" /> : null}</ListItemIcon>
               <Box sx={{ minWidth: 0, flex: 1 }}>
-                <Typography sx={{ fontWeight: e.kind === 'section' ? 700 : 500, overflowWrap: 'anywhere' }}><Highlighted title={e.title} query={query} /></Typography>
-                <Typography variant="caption" color="text.secondary">{e.kind === 'section' ? 'Section' : `${e.sectionTitle}${e.groupTitle ? ` › ${e.groupTitle}` : ''}`}</Typography>
+                <Typography sx={{ fontWeight: e.kind === 'topic' ? 500 : 700, overflowWrap: 'anywhere' }}><Highlighted title={e.title} query={query} /></Typography>
+                <Typography variant="caption" color="text.secondary">{e.where}</Typography>
               </Box>
             </Box>
           )
         })}
         {!browsing && entries.length === 0 && (
           <Box component="li" role="presentation" data-testid="search-empty" sx={{ p: 3, textAlign: 'center' }}>
-            <Typography>No section or topic title matches “{query.trim()}”.</Typography>
+            <Typography>No chapter or topic title matches “{query.trim()}”.</Typography>
             <Typography variant="body2" color="text.secondary">Try a shorter word, e.g. “cap”, “ohm” or “led”.</Typography>
           </Box>
         )}

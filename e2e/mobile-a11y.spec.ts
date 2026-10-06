@@ -2,7 +2,7 @@ import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 import { noHorizontalScroll } from './helpers.ts'
 
-const pages = ['/', '/#/s/s1', '/#/f/ohms-law', '/#/f/r-parallel-n', '/#/f/rc-charging', '/#/f/resistor-colour-code', '/#/f/units-and-prefixes', '/#/f/p9-time-to-voltage', '/#/f/state-of-charge', '/#/f/led-vf']
+const pages = ['/', '/#/part/basics', '/#/chapter/voltage-current-resistance', '/#/topic/multimeter', '/#/topic/oscilloscope', '/#/topic/scope-reading', '/#/topic/logic-levels', '/#/topic/op-amp-gain', '/#/topic/ohms-law', '/#/topic/r-parallel-n', '/#/topic/rc-charging', '/#/topic/resistor-colour-code', '/#/topic/units-and-prefixes', '/#/topic/p9-time-to-voltage', '/#/topic/state-of-charge', '/#/topic/led-vf']
 
 for (const scheme of ['light', 'dark'] as const) {
   test.describe(`accessibility (${scheme})`, () => {
@@ -23,7 +23,7 @@ for (const scheme of ['light', 'dark'] as const) {
 test.describe('mobile ergonomics', () => {
   test('touch targets are at least 44px and nothing scrolls sideways', async ({ page, isMobile }) => {
     test.skip(!isMobile, 'mobile projects only')
-    for (const url of ['/#/f/ohms-law', '/#/f/r-parallel-n', '/#/f/p9-time-to-voltage']) {
+    for (const url of ['/#/topic/ohms-law', '/#/topic/r-parallel-n', '/#/topic/p9-time-to-voltage']) {
       await page.goto(url)
       await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
       await noHorizontalScroll(page)
@@ -41,13 +41,13 @@ test.describe('mobile ergonomics', () => {
   })
 
   test('numeric fields open a decimal keypad', async ({ page }) => {
-    await page.goto('/#/f/ohms-law')
+    await page.goto('/#/topic/ohms-law')
     await expect(page.getByTestId('in-I')).toHaveAttribute('inputmode', 'decimal')
   })
 
   test('diagrams scale to the viewport', async ({ page, isMobile }) => {
     test.skip(!isMobile, 'on wide screens the sidebar takes part of the width')
-    await page.goto('/#/f/voltage-divider')
+    await page.goto('/#/topic/voltage-divider')
     const box = await page.locator('main svg[role="img"]').first().boundingBox()
     const vp = page.viewportSize()!
     expect(box!.width).toBeLessThanOrEqual(vp.width)
@@ -57,7 +57,7 @@ test.describe('mobile ergonomics', () => {
 
 test('keyboard: can reach and operate the calculator without a mouse', async ({ page, isMobile }) => {
   test.skip(isMobile, 'keyboard path is a desktop concern')
-  await page.goto('/#/f/ohms-law')
+  await page.goto('/#/topic/ohms-law')
   await page.getByTestId('mode-V').click()
   await page.getByTestId('in-I').focus()
   await page.keyboard.type('2')

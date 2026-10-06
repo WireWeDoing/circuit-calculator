@@ -36,7 +36,7 @@ const circuits: Array<[string, string]> = [
 
 for (const [id, mode] of circuits) {
   test(`${id}: arrows sit beside the line and clear of everything else`, async ({ page, isMobile }) => {
-    await page.goto(`/#/f/${id}`)
+    await page.goto(`/#/topic/${id}`)
     const tab = page.getByTestId(`mode-${mode}`)
     if (await tab.count()) await tab.click()
     await page.getByTestId('use-example').click()
@@ -56,7 +56,7 @@ for (const [id, mode] of circuits) {
 
 test('ten parallel branches: arrows still clear of their wire (tighter gap, but never on it)', async ({ page, isMobile }) => {
   test.skip(isMobile, 'desktop')
-  await page.goto('/#/f/r-parallel-n')
+  await page.goto('/#/topic/r-parallel-n')
   await page.getByTestId('mode-withV').click()
   for (let i = 0; i < 8; i++) await page.getByRole('button', { name: 'Add another' }).click()
   const vals = ['100', '220', '330', '470', '680', '1000', '2200', '4700', '10000', '47000']

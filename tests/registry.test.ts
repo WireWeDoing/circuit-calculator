@@ -16,7 +16,8 @@ describe('registry metadata', () => {
     const ids = FORMULAS.map((f) => f.id)
     expect(new Set(ids).size).toBe(ids.length)
     const sections = new Set(SECTIONS.map((s) => s.id))
-    for (const f of FORMULAS) expect(sections.has(f.section), `${f.id}: unknown section ${f.section}`).toBe(true)
+    // `section` = where the topic comes from in the cheat sheet; topics added beyond it have none
+    for (const f of FORMULAS) if (f.section !== undefined) expect(sections.has(f.section), `${f.id}: unknown section ${f.section}`).toBe(true)
   })
 
   it('covers every cheat-sheet section', () => {
@@ -30,7 +31,7 @@ describe('registry metadata', () => {
     expect(f.visual, 'every formula needs a visual').toBeTruthy()
     expect(VISUALS[f.visual], `visual "${f.visual}" is not registered`).toBeDefined()
     if (f.tool) expect(TOOLS[f.tool], `tool "${f.tool}" is not registered`).toBeDefined()
-    if (f.modes.length === 0) expect(f.reference || f.tool, `${f.id}: no modes → needs reference rows or a tool`).toBeTruthy()
+    if (f.modes.length === 0) expect(f.reference || f.tool || f.article, `${f.id}: no modes → needs reference rows, a tool or an article`).toBeTruthy()
     for (const field of f.fields) {
       expect(UNITS[field.dim], `${f.id}.${field.key}: unknown dim ${field.dim}`).toBeDefined()
       expect(field.symbol.length).toBeGreaterThan(0)

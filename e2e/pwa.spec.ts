@@ -42,7 +42,7 @@ test.describe('PWA', () => {
     await context.setOffline(true)
     await page.reload()
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
-    await page.goto('/#/f/ohms-law')
+    await page.goto('/#/topic/ohms-law')
     await page.getByTestId('mode-V').click()
     await page.getByTestId('in-I').fill('2')
     await page.getByTestId('in-R').fill('10')
@@ -54,7 +54,7 @@ test.describe('PWA', () => {
     const external: string[] = []
     page.on('request', (r) => { const u = new URL(r.url()); if (!['localhost', '127.0.0.1'].includes(u.hostname) && u.protocol.startsWith('http')) external.push(r.url()) })
     await page.goto('/')
-    await page.goto('/#/f/rc-charging')
+    await page.goto('/#/topic/rc-charging')
     await page.getByTestId('use-example').click()
     await expect(page.getByTestId('result')).toHaveAttribute('data-status', 'ok')
     expect(external).toEqual([])
@@ -63,7 +63,7 @@ test.describe('PWA', () => {
   test('no calculation request goes to a server (only static files are fetched)', async ({ page }) => {
     const posts: string[] = []
     page.on('request', (r) => { if (r.method() !== 'GET') posts.push(`${r.method()} ${r.url()}`) })
-    await page.goto('/#/f/ohms-law')
+    await page.goto('/#/topic/ohms-law')
     await page.getByTestId('use-example').click()
     expect(posts).toEqual([])
   })

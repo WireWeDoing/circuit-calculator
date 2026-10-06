@@ -453,3 +453,104 @@ describe('PCB / RF details', () => {
     expect(run('cap-self-resonance', 'fsrf', { ESL: 1e-9, C: 1e-7 }).fsrf!).toBeGreaterThan(run('cap-self-resonance', 'fsrf', { ESL: 1e-9, C: 1e-6 }).fsrf!)
   })
 })
+
+describe('beyond the cheat sheet: measurement, signals and components', () => {
+  it('a perfect meter (huge Rin) reads the true divider voltage; a meter always reads low, never high', () => {
+    for (let i = 0; i < N; i++) {
+      const V = logu(r, 0.1, 100), R1 = R(), R2 = R()
+      const ideal = run('meter-loading', 'read', { V, R1, R2, Rm: 1e15 })
+      close(ideal.Vread!, run('voltage-divider', 'Vout', { Vin: V, R1, R2 }).Vout!, 1e-6)
+      const real = run('meter-loading', 'read', { V, R1, R2, Rm: 1e7 })
+      expect(real.Vread!).toBeLessThanOrEqual(real.Vtrue! * (1 + 1e-12))
+      expect(real.err!).toBeLessThanOrEqual(1e-9)
+    }
+  })
+  it('burden voltage + voltage across the load = supply (KVL); ammeter reads low', () => {
+    for (let i = 0; i < N; i++) {
+      const V = logu(r, 0.1, 100), Rl = R(), Rs = logu(r, 0.01, 10)
+      const o = run('burden-voltage', 'read', { V, R: Rl, Rs })
+      close(o.Vb! + o.Iread! * Rl, V)
+      expect(o.Iread!).toBeLessThan(o.Itrue!)
+    }
+  })
+  it('waveforms: a square wave has the highest RMS for the same peak, then sine, then triangle', () => {
+    for (let i = 0; i < N; i++) {
+      const Vp = logu(r, 0.01, 1000)
+      const sq = run('waveform-values', 'square', { Vp }), si = run('waveform-values', 'sine', { Vp }), tr = run('waveform-values', 'triangle', { Vp })
+      expect(sq.Vrms!).toBeGreaterThan(si.Vrms!)
+      expect(si.Vrms!).toBeGreaterThan(tr.Vrms!)
+      close(si.Vrms!, run('vrms-from-peak', 'Vrms', { Vpeak: Vp }).Vrms!) // same as the cheat sheet's sine converter
+      for (const o of [sq, si, tr]) close(o.Vpp!, 2 * Vp)
+    }
+  })
+  it('scope: frequency from divisions matches f = 1/T', () => {
+    for (let i = 0; i < N; i++) {
+      const divT = logu(r, 0.2, 10), tdiv = logu(r, 1e-9, 1)
+      const o = run('scope-reading', 't', { divT, tdiv })
+      close(run('frequency-period', 'f', { T: o.T! }).f!, o.f!)
+    }
+  })
+  it('rise time ↔ bandwidth round-trips; correcting an edge measured on an infinitely fast scope changes nothing', () => {
+    for (let i = 0; i < N; i++) {
+      const BW = logu(r, 1e6, 1e10)
+      close(run('rise-time-bandwidth', 'BW', { tr: run('rise-time-bandwidth', 'tr', { BW }).tr! }).BW!, BW)
+      const trm = logu(r, 1e-9, 1e-6)
+      close(run('rise-time-bandwidth', 'true', { trm, BW: 1e15 }).trs!, trm, 1e-6)
+    }
+    expect(status('rise-time-bandwidth', 'true', { trm: 1e-9, BW: 100e6 }).status).toBe('invalid') // faster than the scope
+  })
+  it('noise margins: swapping in a receiver with lower thresholds can only help the high margin', () => {
+    for (let i = 0; i < N; i++) {
+      const VOH = logu(r, 1, 5), VOL = VOH * 0.1, VIL = VOH * 0.3, VIH = VOH * 0.6
+      const a = run('logic-levels', 'nm', { VOH, VOL, VIH, VIL }), b = run('logic-levels', 'nm', { VOH, VOL, VIH: VIH * 0.8, VIL })
+      expect(b.NMH!).toBeGreaterThan(a.NMH!)
+      close(a.NMH! + VIH, VOH)
+    }
+    expect(status('logic-levels', 'nm', { VOH: 0.4, VOL: 2.4, VIH: 2, VIL: 0.8 }).status).toBe('invalid')
+  })
+  it('logic analyser: the longest capture at a sample rate holds exactly the samples you asked for', () => {
+    for (let i = 0; i < N; i++) {
+      const f = logu(r, 1e3, 1e7), k = logu(r, 1, 20), T = logu(r, 1e-3, 10)
+      const o = run('analyser-sample-rate', 'fs', { f, k, T })
+      close(run('analyser-sample-rate', 'T', { fs: o.fs!, N: o.N! }).T!, T)
+    }
+  })
+  it('E-series: the answer is always a member of the series and within half a step', () => {
+    const E12 = [10, 12, 15, 18, 22, 27, 33, 39, 47, 56, 68, 82, 100]
+    for (let i = 0; i < N; i++) {
+      const X = logu(r, 1, 1e7)
+      const o = run('e-series', 'nearest', { X })
+      const m = o.E12! / 10 ** Math.floor(Math.log10(o.E12!)) * 10
+      expect(E12.some((e) => Math.abs(e - m) < 1e-6), `${o.E12} not in E12`).toBe(true)
+      expect(Math.abs(o.err12!)).toBeLessThan(11) // E12 steps are ≈ 21 %, so never more than ~10.5 % away
+      expect(Math.abs(o.err24!)).toBeLessThanOrEqual(Math.abs(o.err12!) + 1e-9) // finer series is never worse
+    }
+  })
+  it('capacitor codes round-trip for every valid code', () => {
+    for (let code = 100; code <= 999; code++) {
+      if (code % 10 === 7) continue // not a valid multiplier digit
+      const C = run('capacitor-code', 'C', { code }).C!
+      if (C < 1e-12 || C >= 99.5e-6) continue // outside what a 3-digit code is used for
+      expect(run('capacitor-code', 'code', { C }).code, `code ${code}`).toBe(code)
+    }
+    expect(status('capacitor-code', 'C', { code: 107 }).status).toBe('invalid')
+  })
+  it('op-amp: |inverting gain| = non-inverting gain − 1; designing Rf for a gain gives that gain back', () => {
+    for (let i = 0; i < N; i++) {
+      const Rf = R(), Rg = R(), Vin = logu(r, 1e-3, 1)
+      const non = run('op-amp-gain', 'noninv', { Rf, Rg, Vin }), inv = run('op-amp-gain', 'inv', { Rf, Rg, Vin })
+      close(-inv.G!, non.G! - 1)
+      close(run('op-amp-gain', 'Rf', { G: non.G!, Rg }).Rf!, Rf, 1e-6)
+    }
+    expect(status('op-amp-gain', 'Rf', { G: 0.5, Rg: 1000 }).status).toBe('invalid')
+  })
+  it('linear regulator: input power = output power + heat', () => {
+    for (let i = 0; i < N; i++) {
+      const Vout = logu(r, 1, 15), Vin = Vout + 2 + logu(r, 0.01, 20), I = logu(r, 1e-3, 3)
+      const o = run('linear-regulator', 'P', { Vin, Vout, I, Vdo: 2 })
+      close(Vin * I, Vout * I + o.P!)
+      close(o.eff! / 100, (Vout * I) / (Vin * I))
+    }
+    expect(status('linear-regulator', 'P', { Vin: 6, Vout: 5, I: 1, Vdo: 2 }).status).toBe('invalid') // dropped out
+  })
+})

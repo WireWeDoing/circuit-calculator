@@ -2,9 +2,10 @@ import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it } from 'vitest'
 import App from '../src/App.tsx'
-import { FORMULAS, SECTIONS } from '../src/formulas/index.ts'
+import { FORMULAS } from '../src/formulas/index.ts'
+import { CHAPTERS, PARTS } from '../src/learn/book.ts'
 import { FormulaPage } from '../src/ui/FormulaPage.tsx'
-import { SectionPage } from '../src/ui/SectionPage.tsx'
+import { ChapterPage } from '../src/ui/BookPages.tsx'
 import { Calculator } from '../src/ui/Calculator.tsx'
 import { formulaById } from '../src/formulas/index.ts'
 import { FLOW_VISUALS } from '../src/visuals/index.ts'
@@ -20,7 +21,7 @@ describe('every formula page renders for newcomers', () => {
     expect(screen.getByRole('heading', { level: 1, name: f.title })).toBeInTheDocument()
     expect(screen.getByTestId('equation')).toHaveTextContent(f.equation.slice(0, 6))
     expect(screen.getByTestId('meaning')).toBeInTheDocument()
-    expect(screen.getByTestId('units-note')).toBeInTheDocument()
+    if (!f.article) expect(screen.getByTestId('units-note')).toBeInTheDocument()
     // a diagram (svg with an accessible name) is always present
     const svgs = container.querySelectorAll('svg[role="img"]')
     expect(svgs.length, `${f.id} needs a visualisation`).toBeGreaterThan(0)
@@ -154,10 +155,11 @@ describe('calculator behaviour', () => {
 })
 
 describe('app shell and navigation', () => {
-  it('home lists all sections and has a labelled search', () => {
+  it('home lists the five parts with all their chapters, and has a labelled search', () => {
     render(<App />)
     expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument()
-    for (const s of SECTIONS) expect(screen.getByTestId(`section-${s.id}`)).toHaveAttribute('href', `#/s/${s.id}`)
+    for (const p of PARTS) expect(within(screen.getByTestId(`part-${p.id}`)).getByRole('heading', { level: 2 })).toHaveTextContent(p.title)
+    for (const c of CHAPTERS) expect(screen.getByTestId(`chapter-${c.id}`)).toHaveAttribute('href', `#/chapter/${c.id}`)
     expect(screen.getByLabelText(/Search formulas/)).toBeInTheDocument()
   })
 
@@ -172,35 +174,38 @@ describe('app shell and navigation', () => {
     expect(screen.getByRole('status')).toHaveTextContent('0 results')
   })
 
-  it('routes: home → section → formula → back', async () => {
+  it('routes: home → chapter → topic → back', async () => {
     render(<App />)
-    go('#/s/s3')
-    expect(await screen.findByRole('heading', { level: 1, name: 'Capacitors' })).toBeInTheDocument()
-    expect(screen.getByTestId('formula-rc-tau')).toHaveAttribute('href', '#/f/rc-tau')
-    go('#/f/rc-tau')
+    go('#/chapter/capacitors')
+    expect(await screen.findByRole('heading', { level: 1, name: '4.3 Capacitors' })).toBeInTheDocument()
+    expect(document.title).toBe('Capacitors · Circuit Calculator')
+    expect(screen.getByTestId('formula-rc-tau')).toHaveAttribute('href', '#/topic/rc-tau')
+    go('#/topic/rc-tau')
     expect(await screen.findByRole('heading', { level: 1, name: 'RC time constant' })).toBeInTheDocument()
     // child pages show the menu button (not a parent-page arrow); the Back button goes to the page you came from
-    expect(screen.getByRole('button', { name: 'Open sections menu' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Open contents menu' })).toBeInTheDocument()
     expect(screen.getByTestId('back-button')).toHaveAccessibleName('Back to Capacitors')
     expect(document.title).toContain('RC time constant')
   })
 
   it('unknown routes show a friendly message', async () => {
     render(<App />)
-    go('#/f/does-not-exist')
+    go('#/topic/does-not-exist')
     expect(await screen.findByRole('alert')).toHaveTextContent(/not found/i)
-    go('#/s/nope')
+    go('#/chapter/nope')
+    expect(await screen.findByRole('alert')).toHaveTextContent(/not found/i)
+    go('#/part/nope')
     expect(await screen.findByRole('alert')).toHaveTextContent(/not found/i)
   })
 
-  it('opens the sections drawer; sections are collapsed parents with an icon each', async () => {
+  it('opens the contents drawer; parts are collapsed parents with an icon each', async () => {
     const user = userEvent.setup()
     render(<App />)
-    await user.click(screen.getByRole('button', { name: 'Open sections menu' }))
-    const nav = await screen.findByRole('navigation', { name: 'Sections' })
-    for (const s of SECTIONS) {
-      expect(within(nav).getByTestId(`nav-section-${s.id}`)).toBeInTheDocument()
-      expect(within(nav).getByTestId(`nav-icon-${s.id}`).querySelector('svg')).toBeTruthy()
+    await user.click(screen.getByRole('button', { name: 'Open contents menu' }))
+    const nav = await screen.findByRole('navigation', { name: 'Book contents' })
+    for (const p of PARTS) {
+      expect(within(nav).getByTestId(`nav-part-${p.id}`)).toBeInTheDocument()
+      expect(within(nav).getByTestId(`nav-icon-${p.id}`).querySelector('svg')).toBeTruthy()
     }
     expect(within(nav).queryByTestId('nav-topic-ohms-law')).not.toBeInTheDocument() // children stay hidden until expanded
   })
@@ -376,10 +381,11 @@ describe('network diagrams follow what you type', () => {
 })
 
 describe('list thumbnails', () => {
-  it('every topic in a section list shows a picture of what it calculates', () => {
-    for (const s of SECTIONS) {
-      const { unmount } = render(<SectionPage id={s.id} />)
-      for (const f of FORMULAS.filter((x) => x.section === s.id)) {
+  it('every topic in a chapter list shows a picture of what it calculates', () => {
+    for (const c of CHAPTERS) {
+      const { unmount } = render(<ChapterPage id={c.id} />)
+      for (const id of c.items) {
+        const f = formulaById(id)!
         const thumb = screen.getByTestId(`thumb-${f.id}`)
         expect(thumb.querySelector('svg'), `${f.id}`).toBeTruthy()
         expect(thumb).toHaveAttribute('aria-hidden', 'true') // decorative: the text link already names it
@@ -389,18 +395,18 @@ describe('list thumbnails', () => {
     }
   })
   it('thumbnails drop the captions that would be unreadable at that size', () => {
-    render(<SectionPage id="s3" />)
+    render(<ChapterPage id="capacitors" />)
     expect(screen.getByTestId('thumb-rc-charging').textContent).not.toContain('Charging: 63%')
   })
   it('home cards and search results have pictures too', async () => {
     const user = userEvent.setup()
     render(<App />)
-    for (const s of SECTIONS) expect(screen.getByTestId(`thumb-section-${s.id}`).querySelector('svg')).toBeTruthy()
+    for (const c of CHAPTERS) expect(screen.getByTestId(`thumb-chapter-${c.id}`).querySelector('svg')).toBeTruthy()
     await user.type(screen.getByTestId('search'), 'divider')
     expect(screen.getByTestId('thumb-voltage-divider')).toBeInTheDocument()
   })
-  it('every section has a valid hero formula', () => {
-    for (const s of SECTIONS) expect(formulaById(s.hero), s.id).toBeDefined()
+  it('every chapter has a valid hero topic', () => {
+    for (const c of CHAPTERS) expect(formulaById(c.hero), c.id).toBeDefined()
   })
 })
 
@@ -507,13 +513,13 @@ describe('current-flow arrows', () => {
   })
 })
 
-describe('home section cards: picture + number in one row, title and description under', () => {
-  it('has the picture and the section number together in the first row, and title/description after it', () => {
+describe('home chapter cards: picture + number in one row, title and description under', () => {
+  it('has the picture and the chapter number together in the first row, and title/description after it', () => {
     render(<App />)
-    for (const s of SECTIONS) {
+    for (const s of CHAPTERS) {
       const head = screen.getByTestId(`card-head-${s.id}`)
-      expect(within(head).getByTestId(`thumb-section-${s.id}`)).toBeInTheDocument()
-      expect(within(head).getByTestId(`section-number-${s.id}`)).toHaveTextContent(`Section${s.number}`)
+      expect(within(head).getByTestId(`thumb-chapter-${s.id}`)).toBeInTheDocument()
+      expect(within(head).getByTestId(`chapter-number-${s.id}`)).toHaveTextContent(`Chapter${s.number}`)
       const title = screen.getByTestId(`card-title-${s.id}`), desc = screen.getByTestId(`card-desc-${s.id}`)
       expect(head.contains(title)).toBe(false) // title and description are NOT in the picture row…
       expect(head.contains(desc)).toBe(false)
@@ -526,9 +532,9 @@ describe('home section cards: picture + number in one row, title and description
   })
   it('the whole card is still one link with a sensible name', () => {
     render(<App />)
-    const link = screen.getByTestId('section-s3')
-    expect(link).toHaveAttribute('href', '#/s/s3')
-    expect(link).toHaveTextContent(/Section\s*3\s*Capacitors/)
+    const link = screen.getByTestId('chapter-capacitors')
+    expect(link).toHaveAttribute('href', '#/chapter/capacitors')
+    expect(link).toHaveTextContent(/Chapter\s*4\.3\s*Capacitors/)
   })
 })
 

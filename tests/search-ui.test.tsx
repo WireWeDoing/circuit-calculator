@@ -2,7 +2,7 @@ import { act, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it } from 'vitest'
 import App from '../src/App.tsx'
-import { SECTIONS } from '../src/formulas/index.ts'
+import { CHAPTERS } from '../src/learn/book.ts'
 
 const go = (hash: string) => act(() => { window.location.hash = hash; window.dispatchEvent(new HashChangeEvent('hashchange')) })
 beforeEach(() => { localStorage.clear(); window.location.hash = '' })
@@ -13,27 +13,27 @@ async function openSearch(user: ReturnType<typeof userEvent.setup>) {
 }
 
 describe('search dialog', () => {
-  it('has a labelled search icon in the app bar; opens focused and lists the sections to begin with', async () => {
+  it('has a labelled search icon in the app bar; opens focused and lists the chapters to begin with', async () => {
     const user = userEvent.setup()
     render(<App />)
-    expect(screen.getByRole('button', { name: 'Search sections and topics' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Search chapters and topics' })).toBeInTheDocument()
     const input = await openSearch(user)
     expect(input).toHaveFocus()
     expect(input).toHaveAttribute('role', 'combobox')
     const list = screen.getByTestId('search-results')
-    expect(within(list).getAllByRole('option')).toHaveLength(SECTIONS.length)
+    expect(within(list).getAllByRole('option')).toHaveLength(CHAPTERS.length)
     expect(screen.getByTestId('search-status')).toHaveTextContent(/Type to search/)
   })
 
-  it('finds sections and topics by title as you type, sections first', async () => {
+  it('finds chapters and topics by title as you type, chapters first', async () => {
     const user = userEvent.setup()
     render(<App />)
     const input = await openSearch(user)
     await user.type(input, 'capac')
     const options = within(screen.getByTestId('search-results')).getAllByRole('option')
-    expect(options[0]).toHaveAttribute('data-testid', 'result-section-s3')
+    expect(options[0]).toHaveAttribute('data-testid', 'result-chapter-capacitors')
     expect(options[0]).toHaveTextContent('Capacitors')
-    expect(screen.getByTestId('result-topic-cap-reactance')).toHaveTextContent('3. Capacitors') // shows where the topic lives
+    expect(screen.getByTestId('result-topic-cap-reactance')).toHaveTextContent('4.3 Capacitors') // shows where the topic lives
     expect(screen.getByTestId('search-status')).toHaveTextContent(/\d+ results?/)
     // typed text is highlighted in the titles
     expect(options[0]!.querySelector('mark')?.textContent?.toLowerCase()).toBe('capac')
@@ -43,14 +43,14 @@ describe('search dialog', () => {
     const user = userEvent.setup()
     render(<App />)
     await user.type(await openSearch(user), 'qwertyzz')
-    expect(screen.getByTestId('search-empty')).toHaveTextContent(/No section or topic title matches/)
+    expect(screen.getByTestId('search-empty')).toHaveTextContent(/No chapter or topic title matches/)
     expect(screen.getByTestId('search-status')).toHaveTextContent('0 results')
   })
 
   it('click a result: navigates there, closes, and the previous page is remembered for Back', async () => {
     const user = userEvent.setup()
     render(<App />)
-    go('#/s/s2')
+    go('#/chapter/resistors')
     await user.type(await openSearch(user), 'rc time')
     await user.click(screen.getByTestId('result-topic-rc-tau'))
     expect(await screen.findByRole('heading', { level: 1, name: 'RC time constant' })).toBeInTheDocument()
@@ -74,7 +74,7 @@ describe('search dialog', () => {
     expect(opts()[0]).toHaveAttribute('aria-selected', 'true')
     await user.keyboard('{ArrowDown}{Enter}')
     await waitFor(() => expect(screen.queryByTestId('search-input')).not.toBeInTheDocument()) // closing animates
-    expect(window.location.hash).toMatch(/^#\/(s|f)\//)
+    expect(window.location.hash).toMatch(/^#\/(part|chapter|topic)\//)
     // reopen and press Escape
     await openSearch(user)
     await user.keyboard('{Escape}')

@@ -18,7 +18,7 @@ export type Dim =
   | 'voltage' | 'current' | 'resistance' | 'capacitance' | 'inductance' | 'frequency' | 'time'
   | 'power' | 'energy' | 'charge' | 'length' | 'area' | 'areaMil' | 'resistivity' | 'ratio'
   | 'angle' | 'dB' | 'dBm' | 'temp' | 'thermal' | 'capacityAh' | 'energyWh' | 'hours'
-  | 'permeability' | 'va' | 'baud' | 'bits' | 'psPerInch' | 'count' | 'ohmMm2PerM' | 'fraction'
+  | 'permeability' | 'va' | 'baud' | 'bits' | 'psPerInch' | 'count' | 'ohmMm2PerM' | 'fraction' | 'percent' | 'div'
 
 const prefixed = (base: string, prefixes: Array<[string, number]>): Unit[] =>
   prefixes.map(([p, factor]) => ({ label: `${p}${base}`, factor }))
@@ -48,6 +48,9 @@ export const UNITS: Record<Dim, Unit[]> = {
   count: [{ label: '', factor: 1 }],
   bits: [{ label: 'bit', factor: 1 }],
   fraction: [{ label: '', factor: 1 }],
+  percent: [{ label: '%', factor: 1 }],
+  /** oscilloscope screen divisions */
+  div: [{ label: 'div', factor: 1 }],
   angle: [{ label: '°', factor: 1 }],
   dB: [{ label: 'dB', factor: 1 }],
   dBm: [{ label: 'dBm', factor: 1 }],

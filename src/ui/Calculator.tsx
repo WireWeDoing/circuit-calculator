@@ -6,7 +6,6 @@ import LightbulbOutlinedIcon from '@mui/icons-material/LightbulbOutlined'
 import Alert from '@mui/material/Alert'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
-import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
 import IconButton from '@mui/material/IconButton'
 import Stack from '@mui/material/Stack'
@@ -20,6 +19,7 @@ import { FlowContext, type FlowMode } from '../visuals/kit.tsx'
 import ToggleButton from '@mui/material/ToggleButton'
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup'
 import { parseNumber } from './input.ts'
+import { AnchorCard } from './anchors.tsx'
 import { Breakdown } from './Breakdown.tsx'
 import { ModeTabs } from './ModeTabs.tsx'
 import { QuantityInput, type Entry } from './QuantityInput.tsx'
@@ -146,7 +146,7 @@ export function Calculator({ formula }: { formula: Formula }) {
         {formula.modes.length > 1 && (
           <Box sx={{ gridArea: 'modes', minWidth: 0 }}><ModeTabs tabs={tabs} value={modeId} onChange={setModeId} label="Choose what to solve for" /></Box>
         )}
-        <Card variant="outlined" sx={{ gridArea: 'inputs', minWidth: 0 }}>
+        <AnchorCard id="inputs" label="Enter what you know" sx={{ gridArea: 'inputs', minWidth: 0 }}>
           <CardContent>
             <Typography component="h2" variant="h3" gutterBottom>Enter what you know</Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }} data-testid="mode-equation">{mode.equation}</Typography>
@@ -181,10 +181,10 @@ export function Calculator({ formula }: { formula: Formula }) {
               <Button onClick={clearAll} data-testid="clear">Clear</Button>
             </Row>
           </CardContent>
-        </Card>
+        </AnchorCard>
 
         <Stack spacing={2} sx={{ gridArea: 'results', minWidth: 0 }}>
-        <Card variant="outlined" sx={{ borderColor: result.status === 'ok' ? 'primary.main' : undefined }}>
+        <AnchorCard id="result" label="Result" sx={{ borderColor: result.status === 'ok' ? 'primary.main' : undefined }}>
           <CardContent>
             <Typography component="h2" variant="h3" gutterBottom>Result</Typography>
             <Box aria-live="polite" aria-atomic="true" data-testid="result" data-status={result.status}>
@@ -221,11 +221,11 @@ export function Calculator({ formula }: { formula: Formula }) {
               )}
             </Box>
           </CardContent>
-        </Card>
+        </AnchorCard>
 
         {result.status === 'ok' && result.rows && <Breakdown rows={result.rows} share={mode.table?.share ?? 'Share'} sums={mode.table?.sums ?? []} />}
         {result.status === 'ok' && (
-          <Card variant="outlined">
+          <AnchorCard id="steps" label="How it was calculated">
             <CardContent>
               <Typography component="h2" variant="h3" gutterBottom>How it was calculated</Typography>
               <Box component="ol" sx={{ pl: 3, m: 0, '& li': { mb: 0.75 } }} data-testid="steps">
@@ -233,12 +233,12 @@ export function Calculator({ formula }: { formula: Formula }) {
                 {result.steps.map((s, i) => <li key={i}>{s}</li>)}
               </Box>
             </CardContent>
-          </Card>
+          </AnchorCard>
         )}
         </Stack>
       </>
       <Box sx={{ gridArea: 'visual', minWidth: 0, position: { md: 'sticky' }, top: { md: 72 }, alignSelf: 'start' }}>
-        <Card variant="outlined"><CardContent>
+        <AnchorCard id="diagram" label="Diagram"><CardContent>
           {FLOW_VISUALS.has(formula.visual) && (
             <Box sx={{ mb: 1.5 }}>
               <ToggleButtonGroup exclusive size="small" value={flow} onChange={(_, v: FlowMode | null) => v && setFlow(v)} aria-label="Current direction shown by the arrows" sx={{ flexWrap: 'wrap' }}>
@@ -251,7 +251,7 @@ export function Calculator({ formula }: { formula: Formula }) {
             </Box>
           )}
           <FlowContext.Provider value={flow}>{Visual && <Visual {...visualProps} />}</FlowContext.Provider>
-        </CardContent></Card>
+        </CardContent></AnchorCard>
       </Box>
     </Box>
   )

@@ -1,16 +1,18 @@
-import { formulaById, SECTIONS } from '../formulas/index.ts'
-import { hrefFormula, hrefSection, type Route } from './router.ts'
+import { formulaById } from '../formulas/index.ts'
+import { chapterById, partById } from '../learn/book.ts'
+import { hrefOf, type Route } from './router.ts'
 
 /** How many previously opened pages the Back button remembers. */
 export const MAX_HISTORY = 3
 
 export const routeKey = (r: Route): string => (r.page === 'home' ? 'home' : `${r.page}:${r.id}`)
-export const routeHref = (r: Route): string => (r.page === 'home' ? '#/' : r.page === 'section' ? hrefSection(r.id) : hrefFormula(r.id))
+export const routeHref = (r: Route): string => hrefOf(r)
 
-/** Human name of a page, for "Back to …". Unknown pages get a neutral name. */
+/** Human name of a page, for "Back to …" and the document title. Unknown pages get a neutral name. */
 export function routeLabel(r: Route): string {
   if (r.page === 'home') return 'Home'
-  if (r.page === 'section') { const s = SECTIONS.find((x) => x.id === r.id); return s ? s.title : 'Section' }
+  if (r.page === 'part') return partById(r.id)?.title ?? 'Part'
+  if (r.page === 'chapter') return chapterById(r.id)?.title ?? 'Chapter'
   return formulaById(r.id)?.title ?? 'Page'
 }
 

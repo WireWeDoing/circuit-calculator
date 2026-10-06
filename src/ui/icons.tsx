@@ -2,11 +2,14 @@ import type { ComponentType } from 'react'
 import BatteryChargingFullIcon from '@mui/icons-material/BatteryChargingFull'
 import BoltIcon from '@mui/icons-material/Bolt'
 import CableIcon from '@mui/icons-material/Cable'
-import CalculateIcon from '@mui/icons-material/Calculate'
+import AccountTreeIcon from '@mui/icons-material/AccountTree'
+import BatteryAlertIcon from '@mui/icons-material/BatteryAlert'
 import CellTowerIcon from '@mui/icons-material/CellTower'
 import DeveloperBoardIcon from '@mui/icons-material/DeveloperBoard'
 import GraphicEqIcon from '@mui/icons-material/GraphicEq'
+import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment'
 import MemoryIcon from '@mui/icons-material/Memory'
+import PowerIcon from '@mui/icons-material/Power'
 import StraightenIcon from '@mui/icons-material/Straighten'
 import TimerIcon from '@mui/icons-material/Timer'
 import TuneIcon from '@mui/icons-material/Tune'
@@ -30,24 +33,22 @@ export const TransistorIcon = (p: SvgIconProps) => <Line {...p}><circle cx="13" 
 export const MosfetIcon = (p: SvgIconProps) => <Line {...p}><path d="M2 12h5M7 6v12M10 6.5v3M10 10.5v3M10 14.5v3M10 8h8V3M10 16h8v5M10 12h8" /></Line>
 export const SineIcon = (p: SvgIconProps) => <Line {...p}><path d="M2 12c3-9 6-9 8 0s5 9 8 0c.8-2.4 2-3.6 4-3.6" /></Line>
 
-/** The element each top-level section is about (shown only on the parent rows of the sidebar). */
-export const SECTION_ICONS: Record<string, ComponentType<SvgIconProps>> = {
-  s0: StraightenIcon, // units & prefixes
-  s1: BoltIcon, // Ohm's law & power
-  s2: ResistorIcon,
-  s3: CapacitorIcon,
-  s4: InductorIcon,
-  s5: TuneIcon, // resonance & filters
-  s6: DiodeIcon,
-  s7: TransistorIcon,
-  s8: MosfetIcon,
-  s9: SineIcon, // AC & impedance
-  s10: TimerIcon, // 555 timer
-  s11: GraphicEqIcon, // dB, wavelength, period
-  s12: CableIcon, // wires & general laws
-  s13: MemoryIcon, // microcontrollers
-  s14: DeveloperBoardIcon, // PCB
-  s15: BatteryChargingFullIcon,
-  s16: CellTowerIcon, // RF & antennas
-  s17: CalculateIcon, // solving circuits
+export const MultimeterIcon = (p: SvgIconProps) => <Line {...p}><path d="M6 2h12v20H6zM8.5 4.5h7v5h-7z" /><circle cx="12" cy="16" r="2.6" /><path d="M12 16l1.5-1.5" /></Line>
+export const ScopeIcon = (p: SvgIconProps) => <Line {...p}><path d="M2 4h20v14H2zM7 22h10" /><path d="M4 13c2-6 4-6 6 0s4 6 6 0 3-5 4-3" /></Line>
+export const LogicIcon = (p: SvgIconProps) => <Line {...p}><path d="M2 9h4V4h5v5h4V4h7M2 20h6v-5h4v5h3v-5h7" /></Line>
+export const SchematicIcon = (p: SvgIconProps) => <Line {...p}><path d="M2 6h5l1.5-3 3 6 3-6 1.5 3h6M4 6v12h16V6M10 18v-4M14 18v-4M8 14h4M12 14h4" /></Line>
+export const GaugeIcon = (p: SvgIconProps) => <Line {...p}><path d="M3 18a9 9 0 1 1 18 0M12 18l5-6M3 21h18" /></Line>
+export const OpAmpIcon = (p: SvgIconProps) => <Line {...p}><path d="M7 3v18l14-9zM2 8h5M2 16h5M21 12h2M9 8h3M9 16h3M10.5 14.5v3" /></Line>
+
+/** The icon of each part and chapter of the book (sidebar parent rows, home cards, search). */
+export const BOOK_ICONS: Record<string, ComponentType<SvgIconProps>> = {
+  // parts
+  basics: BoltIcon, measurements: MultimeterIcon, signals: SineIcon, components: ResistorIcon, advanced: MemoryIcon,
+  // chapters
+  units: StraightenIcon, 'voltage-current-resistance': BoltIcon, power: LocalFireDepartmentIcon, schematics: SchematicIcon,
+  multimeter: MultimeterIcon, 'measurement-errors': GaugeIcon, 'measuring-sources': BatteryAlertIcon,
+  'dc-ac-pulses': SineIcon, oscilloscope: ScopeIcon, 'decibels-wavelength': GraphicEqIcon, 'digital-signals': LogicIcon,
+  wires: CableIcon, resistors: ResistorIcon, capacitors: CapacitorIcon, inductors: InductorIcon, 'diodes-leds': DiodeIcon, batteries: BatteryChargingFullIcon,
+  bjt: TransistorIcon, mosfets: MosfetIcon, 'timers-ics': TimerIcon,
+  microcontrollers: MemoryIcon, 'power-supplies': PowerIcon, 'ac-filters': TuneIcon, 'network-theorems': AccountTreeIcon, pcb: DeveloperBoardIcon, rf: CellTowerIcon,
 }

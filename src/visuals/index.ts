@@ -7,6 +7,7 @@ import * as dev from './devices.tsx'
 import * as dig from './digital.tsx'
 import * as rf from './rf.tsx'
 import * as pr from './problems.tsx'
+import * as ins from './instruments.tsx'
 
 export type Visual = ComponentType<VisualProps>
 
@@ -26,6 +27,10 @@ export const VISUALS: Record<string, Visual> = {
   diode: dev.DiodeV, led: dev.LedV, bjt: dev.Bjt, 'bjt-switch': dev.BjtSwitch, mosfet: dev.Mosfet, wire: dev.WireV, 'charge-flow': dev.ChargeFlow, kvl: dev.Kvl, kcl: dev.Kcl, battery: dev.BatteryV, pack: dev.Pack,
   adc: dig.Adc, nyquist: dig.Nyquist, pwm: dig.Pwm, decoupling: dig.Decoupling, crystal: dig.Crystal, uart: dig.Uart, i2c: dig.I2c,
   trace: rf.Trace, microstrip: rf.Microstrip, skin: rf.Skin, antenna: rf.Antenna, fspl: rf.Fspl, swr: rf.Swr,
+  water: ins.Water, symbols: ins.Symbols, breadboard: ins.Breadboard, safety: ins.Safety,
+  multimeter: ins.MultimeterHookup, 'meter-loading': ins.MeterLoading, burden: ins.Burden,
+  signals: ins.Signals, waveforms: ins.Waveforms, scope: ins.Scope, 'rise-time': ins.RiseTime, 'logic-analyser': ins.LogicAnalyser, 'logic-levels': ins.LogicLevels, 'sample-rate': ins.SampleRate,
+  'e-series': ins.ESeries, 'cap-code': ins.CapCode, 'op-amp': ins.OpAmp, regulator: ins.Regulator,
   p1: pr.P1, p2: pr.P2, p3: pr.P3, p4: pr.P4, p5: pr.P5, p6: pr.P6, p7: pr.P7, p8: pr.P8, p13: pr.P13, p14: pr.P14, p15: pr.P15, p16: pr.P16, p18: pr.P18, p20: pr.P20,
 }
 

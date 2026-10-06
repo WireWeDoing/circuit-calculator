@@ -1,3 +1,4 @@
+import { useEffect, useMemo } from 'react'
 import Accordion from '@mui/material/Accordion'
 import AccordionDetails from '@mui/material/AccordionDetails'
 import AccordionSummary from '@mui/material/AccordionSummary'
@@ -21,16 +22,35 @@ import { VISUALS } from '../visuals/index.ts'
 import { Calculator } from './Calculator.tsx'
 import { ScrollX } from './ScrollX.tsx'
 import { TOOLS } from './tools.tsx'
-import { hrefSection } from './router.ts'
+import { hrefChapter } from './router.ts'
+import { chapterOf } from '../learn/book.ts'
+import { TopicNav } from './BookPages.tsx'
+import { AnchorCard } from './anchors.tsx'
+import { AnchorContext, anchorDomId } from './anchorContext.ts'
+import { Article } from './Article.tsx'
 
-export function FormulaPage({ formula }: { formula: Formula }) {
+/** cards that only exist once a result is shown fall back to the Result card when the link is opened */
+const FALLBACK: Record<string, string> = { steps: 'result', breakdown: 'result' }
+
+export function FormulaPage({ formula, anchor }: { formula: Formula; anchor?: string }) {
+  const ctx = useMemo(() => ({ topicId: formula.id, active: anchor }), [formula.id, anchor])
+  // a link to one card (…/#/topic/<id>/<card>): scroll to it once the page is drawn
+  useEffect(() => {
+    if (!anchor) return
+    const el = document.getElementById(anchorDomId(anchor)) ?? document.getElementById(anchorDomId(FALLBACK[anchor] ?? ''))
+    if (!el) return
+    const frame = requestAnimationFrame(() => el.scrollIntoView?.({ block: 'start' }))
+    return () => cancelAnimationFrame(frame)
+  }, [anchor, formula.id])
   const section = SECTIONS.find((s) => s.id === formula.section)
+  const chapter = chapterOf(formula.id)
   const Tool = formula.tool ? TOOLS[formula.tool] : undefined
   const Visual = VISUALS[formula.visual]
   return (
+    <AnchorContext.Provider value={ctx}>
     <Stack spacing={2} component="article" aria-labelledby="formula-title">
       <Box>
-        {section && <Chip component="a" href={hrefSection(section.id)} clickable size="small" label={`§${section.number} ${section.title}`} sx={{ mb: 1 }} />}
+        {chapter && <Chip component="a" href={hrefChapter(chapter.id)} clickable size="small" label={`${chapter.number} ${chapter.title}`} sx={{ mb: 1 }} data-testid="chapter-chip" />}
         <Typography id="formula-title" component="h1" variant="h1">{formula.title}</Typography>
         <Typography component="p" sx={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', fontSize: '1.15rem', fontWeight: 600, color: 'primary.main', mt: 0.5, wordBreak: 'break-word' }} data-testid="equation">{formula.equation}</Typography>
         <Typography sx={{ mt: 1 }} data-testid="meaning">{formula.meaning}</Typography>
@@ -43,25 +63,27 @@ export function FormulaPage({ formula }: { formula: Formula }) {
 
       {formula.modes.length > 0 && <Calculator key={formula.id} formula={formula} />}
       {Tool && <Tool />}
-      {formula.modes.length === 0 && !Tool && Visual && <Card variant="outlined"><CardContent><Visual v={{}} lists={{}} mode="" /></CardContent></Card>}
+      {formula.modes.length === 0 && !Tool && Visual && <AnchorCard id="diagram" label="Diagram"><CardContent><Visual v={{}} lists={{}} mode="" /></CardContent></AnchorCard>}
+
+      {formula.article && <Article blocks={formula.article} />}
 
       {formula.reference && (
-        <Card variant="outlined"><CardContent>
+        <AnchorCard id="reference" label="Reference values"><CardContent>
           <Typography component="h2" variant="h3" gutterBottom>Reference values</Typography>
           <Table size="small" aria-label="Reference values"><TableBody>
             {formula.reference.rows.map(([k, v]) => <TableRow key={k}><TableCell component="th" scope="row">{k}</TableCell><TableCell>{v}</TableCell></TableRow>)}
           </TableBody></Table>
-        </CardContent></Card>
+        </CardContent></AnchorCard>
       )}
 
-      <Card variant="outlined"><CardContent>
+      {(!formula.article || formula.unitsNote) && <AnchorCard id="units" label="Units & conversion"><CardContent>
         <Typography component="h2" variant="h3" gutterBottom>Units &amp; conversion</Typography>
         <Typography data-testid="units-note">{formula.unitsNote || 'Use consistent units; the calculator converts prefixes to base units for you.'}</Typography>
         {formula.exampleText && <Typography sx={{ mt: 1 }} color="text.secondary" data-testid="example-text"><strong>Worked example: </strong>{formula.exampleText}</Typography>}
-      </CardContent></Card>
+      </CardContent></AnchorCard>}
 
       {formula.fields.length > 0 && (
-        <Card variant="outlined"><CardContent>
+        <AnchorCard id="variables" label="Variables"><CardContent>
           <Typography component="h2" variant="h3" gutterBottom>Variables</Typography>
           <ScrollX label="Variables (scrolls sideways)">
             <Table size="small" aria-label="Variables">
@@ -73,7 +95,7 @@ export function FormulaPage({ formula }: { formula: Formula }) {
               </TableBody>
             </Table>
           </ScrollX>
-        </CardContent></Card>
+        </CardContent></AnchorCard>
       )}
 
       {formula.concepts?.map((id) => {
@@ -85,7 +107,9 @@ export function FormulaPage({ formula }: { formula: Formula }) {
           </Accordion>
         ) : null
       })}
-      {formula.page && <Typography variant="caption" color="text.secondary">Cheat sheet page {formula.page}</Typography>}
+      {section && <Typography variant="caption" color="text.secondary" data-testid="cheat-sheet-source">From the cheat sheet: §{section.number} {section.title}{formula.page ? `, page ${formula.page}` : ''}</Typography>}
+      <TopicNav id={formula.id} />
     </Stack>
+    </AnchorContext.Provider>
   )
 }

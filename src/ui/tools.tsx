@@ -1,7 +1,6 @@
 import { useMemo, useState, type ComponentType } from 'react'
 import Alert from '@mui/material/Alert'
 import Box from '@mui/material/Box'
-import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
 import LinearProgress from '@mui/material/LinearProgress'
 import Slider from '@mui/material/Slider'
@@ -19,6 +18,7 @@ import { COLOUR_NAMES, COLOURS, decodeBands, encodeBands } from '../core/colorco
 import { decodeCapacitor3, decodeResistor3, parseRKM, SHORTCUTS } from '../core/markings.ts'
 import { liIonSoc } from '../core/soc.ts'
 import { fmtNum, fmtSI } from '../core/units.ts'
+import { AnchorCard } from './anchors.tsx'
 import { QuantityInput, type Entry } from './QuantityInput.tsx'
 import { parseNumber } from './input.ts'
 import { Row } from './layout.tsx'
@@ -45,7 +45,7 @@ function ColourCodeTool() {
   const enc = want !== undefined && !Number.isNaN(want) ? encodeBands(want * factor, n === 4 ? 2 : 3, 5) : undefined
   return (
     <Stack spacing={2}>
-      <Card variant="outlined"><CardContent>
+      <AnchorCard id="bands-to-value" label="Bands → value"><CardContent>
         <Typography component="h2" variant="h3" gutterBottom>Bands → value</Typography>
         <ToggleButtonGroup exclusive value={n} onChange={(_, v: 4 | 5 | null) => v && change(v)} aria-label="Number of bands" size="small" sx={{ mb: 2 }}>
           <ToggleButton value={4}>4 bands</ToggleButton><ToggleButton value={5}>5 bands</ToggleButton>
@@ -62,19 +62,19 @@ function ColourCodeTool() {
           {res.ok ? <Typography sx={{ fontSize: '1.6rem', fontWeight: 700 }}>{fmtSI('resistance', res.ohms)} ±{res.tolerance}%</Typography> : <Alert severity="error">{res.error}</Alert>}
         </Box>
         <Box sx={{ mt: 1, display: 'flex', gap: 0.5, flexWrap: 'wrap' }} aria-hidden="true">{COLOUR_NAMES.map((c) => <Box key={c} title={c} sx={{ width: 18, height: 18, borderRadius: '50%', bgcolor: BAND_COLORS[c], border: '1px solid #0004' }} />)}</Box>
-      </CardContent></Card>
-      <Card variant="outlined"><CardContent>
+      </CardContent></AnchorCard>
+      <AnchorCard id="value-to-bands" label="Value → bands"><CardContent>
         <Typography component="h2" variant="h3" gutterBottom>Value → bands ({n} bands, ±5%)</Typography>
         <QuantityInput field={field('r', 'R', 'Resistance', 'resistance', { sign: 'pos' })} entry={valText} rowId="colour-value" onChange={(_, e) => setValText(e)} testId="colour-value" />
         {want !== undefined && (enc ? <><ResistorBands bands={enc} /><Typography data-testid="colour-bands">{enc.join(' – ')}</Typography></> : <Alert severity="warning">That value cannot be written with {n} bands (±5%). Try {n === 4 ? '5' : '4'} bands.</Alert>)}
-      </CardContent></Card>
-      <Card variant="outlined"><CardContent>
+      </CardContent></AnchorCard>
+      <AnchorCard id="colour-table" label="Colour table"><CardContent>
         <Typography component="h2" variant="h3" gutterBottom>Colour table</Typography>
         <ScrollX label="Resistor colour code (scrolls sideways)"><Table size="small" aria-label="Resistor colour code"><TableHead><TableRow><TableCell>Colour</TableCell><TableCell>Digit</TableCell><TableCell>Multiplier</TableCell><TableCell>Tolerance</TableCell></TableRow></TableHead><TableBody>
           {COLOUR_NAMES.map((c) => { const i = COLOURS[c]!; return <TableRow key={c}><TableCell><Row gap={1}><Box sx={{ width: 16, height: 16, borderRadius: '50%', bgcolor: BAND_COLORS[c], border: '1px solid #0004' }} />{c}</Row></TableCell><TableCell>{i.digit ?? '—'}</TableCell><TableCell>{i.multiplier === undefined ? '—' : `×${fmtNum(i.multiplier)}`}</TableCell><TableCell>{i.tolerance === undefined ? '—' : `±${i.tolerance}%`}</TableCell></TableRow> })}
         </TableBody></Table></ScrollX>
         <Typography variant="body2" sx={{ mt: 1 }}>4-band: digit, digit, multiplier, tolerance. Brown-black-red-gold = 1, 0, ×100, ±5% → 1000 Ω = 1 kΩ ±5%. 5-band: digit, digit, digit, multiplier, tolerance.</Typography>
-      </CardContent></Card>
+      </CardContent></AnchorCard>
     </Stack>
   )
 }
@@ -91,7 +91,7 @@ function UnitsTool() {
   const parsed = useMemo(() => (kind === 'rkm' ? parseRKM(code) : kind === 'r3' ? decodeResistor3(code) : decodeCapacitor3(code)), [kind, code])
   return (
     <Stack spacing={2}>
-      <Card variant="outlined"><CardContent>
+      <AnchorCard id="prefix-converter" label="Prefix converter"><CardContent>
         <Typography component="h2" variant="h3" gutterBottom>Prefix converter</Typography>
         <Box sx={{ display: 'grid', gap: 1.5, gridTemplateColumns: { xs: '1fr 1fr', sm: '2fr 1fr 1fr' } }}>
           <TextField label="Value" value={v} onChange={(e) => setV(e.target.value)} slotProps={{ htmlInput: { inputMode: 'decimal', 'data-testid': 'prefix-value' } }} sx={{ gridColumn: { xs: '1 / -1', sm: 'auto' } }} />
@@ -100,23 +100,23 @@ function UnitsTool() {
         </Box>
         <Typography sx={{ mt: 2, fontSize: '1.5rem', fontWeight: 700 }} aria-live="polite" data-testid="prefix-result">{out === undefined ? 'Enter a number' : `${fmtNum(x!)} ${from === '(none)' ? '' : from} = ${fmtNum(out)} ${to === '(none)' ? '' : to}`.replace(/\s+/g, ' ')}</Typography>
         <Typography variant="body2" color="text.secondary">Each step G → M → k → (base) → m → µ → n → p is ×1000. To a smaller prefix multiply; to a bigger one divide.</Typography>
-      </CardContent></Card>
-      <Card variant="outlined"><CardContent><PrefixLadder /></CardContent></Card>
-      <Card variant="outlined"><CardContent>
+      </CardContent></AnchorCard>
+      <AnchorCard id="prefix-ladder" label="Prefix ladder"><CardContent><PrefixLadder /></CardContent></AnchorCard>
+      <AnchorCard id="when-to-convert" label="When to convert"><CardContent>
         <Typography component="h2" variant="h3" gutterBottom>When do you actually need to convert?</Typography>
         <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
           <Alert severity="success" icon={false}><strong>No conversion needed — like with like</strong><br />Series resistors: 1 kΩ + 2 kΩ = 3 kΩ<br />Parallel: (1 kΩ × 2 kΩ)/(1 kΩ + 2 kΩ) = 0.667 kΩ<br />Capacitors: 10 µF + 22 µF in parallel = 32 µF; 10 µF and 10 µF in series = 5 µF<br />Inductors: 10 µH + 22 µH in series = 32 µH<br />Ratios (divider, dB, duty cycle): units cancel completely.</Alert>
           <Alert severity="warning" icon={false}><strong>CONVERT FIRST — mixed prefixes or different quantities</strong><br />1 kΩ + 470 Ω → 1000 Ω + 470 Ω = 1470 Ω (not 471!)<br />1 µF + 470 nF → 1000 nF + 470 nF = 1470 nF<br />Different quantities multiplied or divided (V = I × R, τ = R × C, XC, f0): prefixes don't cancel — convert to base units or use a shortcut pair below.</Alert>
         </Box>
-      </CardContent></Card>
-      <Card variant="outlined"><CardContent>
+      </CardContent></AnchorCard>
+      <AnchorCard id="shortcut-pairs" label="Shortcut unit pairs"><CardContent>
         <Typography component="h2" variant="h3" gutterBottom>Shortcut unit pairs</Typography>
         <Typography variant="body2" sx={{ mb: 1 }}>No conversion needed if you stay inside a pair.</Typography>
         <ScrollX label="Shortcut unit pairs (scrolls sideways)"><Table size="small" aria-label="Shortcut unit pairs"><TableHead><TableRow><TableCell>You combine</TableCell><TableCell>You get</TableCell><TableCell>Example</TableCell></TableRow></TableHead><TableBody>
           {SHORTCUTS.map((s) => <TableRow key={s.you}><TableCell>{s.you}</TableCell><TableCell>{s.get}</TableCell><TableCell>{s.example}</TableCell></TableRow>)}
         </TableBody></Table></ScrollX>
-      </CardContent></Card>
-      <Card variant="outlined"><CardContent>
+      </CardContent></AnchorCard>
+      <AnchorCard id="part-markings" label="Part markings decoder"><CardContent>
         <Typography component="h2" variant="h3" gutterBottom>Part markings decoder</Typography>
         <ToggleButtonGroup exclusive size="small" value={kind} onChange={(_, k: typeof kind | null) => { if (k) { setKind(k); setCode(k === 'rkm' ? '4k7' : k === 'r3' ? '103' : '104') } }} aria-label="Marking type" sx={{ mb: 2, flexWrap: 'wrap' }}>
           <ToggleButton value="rkm">R / k / M notation</ToggleButton><ToggleButton value="r3">3-digit resistor</ToggleButton><ToggleButton value="c3">3-digit capacitor</ToggleButton>
@@ -126,7 +126,7 @@ function UnitsTool() {
           {parsed.ok ? <Typography sx={{ fontSize: '1.4rem', fontWeight: 700 }}>{parsed.text} → {fmtSI(parsed.unit === 'F' ? 'capacitance' : 'resistance', parsed.value)}</Typography> : <Alert severity="error">{parsed.error}</Alert>}
         </Box>
         <Typography variant="body2" sx={{ mt: 1 }}>R/k/M notation: the letter is the decimal point — 4k7 = 4.7 kΩ, 2M2 = 2.2 MΩ, R47 = 0.47 Ω. 3-digit codes: two digits + number of zeros. Resistor "103" = 10 kΩ. Capacitors are in pF: "104" = 100 000 pF = 100 nF; "472" = 4.7 nF.</Typography>
-      </CardContent></Card>
+      </CardContent></AnchorCard>
     </Stack>
   )
 }
@@ -135,7 +135,7 @@ function SocTool() {
   const [volts, setVolts] = useState(3.7)
   const soc = liIonSoc(volts)
   return (
-    <Card variant="outlined"><CardContent>
+    <AnchorCard id="state-of-charge" label="Li-ion state of charge"><CardContent>
       <Typography component="h2" variant="h3" gutterBottom>Li-ion state of charge (rough)</Typography>
       <Typography id="soc-label" gutterBottom>Resting (no-load) cell voltage: <strong data-testid="soc-volts">{volts.toFixed(2)} V</strong></Typography>
       <Slider value={volts} min={2.8} max={4.3} step={0.01} onChange={(_, v) => setVolts(v as number)} aria-labelledby="soc-label" valueLabelDisplay="auto" slotProps={{ input: { 'data-testid': 'soc-slider' } as object }} />
@@ -147,7 +147,7 @@ function SocTool() {
       <LinearProgress variant="determinate" value={soc} sx={{ height: 14, borderRadius: 7, my: 1 }} aria-label="Estimated charge" />
       <Typography sx={{ fontSize: '1.8rem', fontWeight: 700 }} aria-live="polite" data-testid="soc-result">≈ {fmtNum(soc, 3)} %</Typography>
       <Alert severity={volts <= 3.0 ? 'error' : 'info'} sx={{ mt: 1 }}>Rough Li-ion values — 4.2 V ≈ full, 3.7 V ≈ half, 3.0 V ≈ empty (don't go lower). Read the real value from your chemistry's discharge curve; this estimate interpolates those three points.</Alert>
-    </CardContent></Card>
+    </CardContent></AnchorCard>
   )
 }
 
@@ -162,19 +162,19 @@ const STEPS: Array<[string, string, string]> = [
 function MethodTool() {
   return (
     <Stack spacing={2}>
-      <Card variant="outlined"><CardContent><SeriesParallelTable />
+      <AnchorCard id="series-parallel-table" label="Series and parallel rules"><CardContent><SeriesParallelTable />
         <ScrollX label="Series versus parallel (scrolls sideways)"><Table size="small" aria-label="Series versus parallel"><TableHead><TableRow><TableCell /><TableCell>Series — one path, end to end</TableCell><TableCell>Parallel — across the same two points</TableCell></TableRow></TableHead><TableBody>
           <TableRow><TableCell component="th">Current</TableCell><TableCell>Same through every component</TableCell><TableCell>Splits between branches: I = I1 + I2 + … (KCL)</TableCell></TableRow>
           <TableRow><TableCell component="th">Voltage</TableCell><TableCell>Splits between components: V = V1 + V2 + … (KVL)</TableCell><TableCell>Same across every branch</TableCell></TableRow>
           <TableRow><TableCell component="th">Resistance</TableCell><TableCell>Adds: Rt = R1 + R2 + …</TableCell><TableCell>Reciprocals add: 1/Rt = 1/R1 + 1/R2 + …</TableCell></TableRow>
           <TableRow><TableCell component="th">Total vs parts</TableCell><TableCell>Total is larger than any part</TableCell><TableCell>Total is smaller than any branch</TableCell></TableRow>
         </TableBody></Table></ScrollX>
-      </CardContent></Card>
-      <Card variant="outlined"><CardContent>
+      </CardContent></AnchorCard>
+      <AnchorCard id="general-method" label="General method"><CardContent>
         <Typography component="h2" variant="h3" gutterBottom>General method for any unknown component</Typography>
         <Box component="ol" sx={{ pl: 3, m: 0 }}>{STEPS.map(([what, why]) => <li key={what}><Typography><strong>{what}</strong> <Typography component="span" color="text.secondary">— {why}</Typography></Typography></li>)}</Box>
         <Typography sx={{ mt: 2 }}><strong>Two equivalent routes:</strong> Method A follows currents and voltages branch by branch (easy to check with a multimeter). Method B reduces the circuit to one equivalent resistance and then removes the known parts from it. Both give the same answer — each guided problem below offers both where they exist.</Typography>
-      </CardContent></Card>
+      </CardContent></AnchorCard>
     </Stack>
   )
 }

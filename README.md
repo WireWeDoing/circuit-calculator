@@ -1,6 +1,6 @@
 # Circuit Calculator
 
-An interactive, offline-capable web version of the *Electronics Fundamentals — Formula Reference* cheat sheet (`docs/`).
+An interactive, offline-capable electronics reference book, built from the *Electronics Fundamentals — Formula Reference* cheat sheet (`docs/`) and ordered for beginners: basics → measurements (multimeter) → signals (oscilloscope, logic analyser) → components (555 and ICs last) → advanced topics.
 Every formula is a calculator with a diagram, unit-aware inputs, validation and step-by-step working. All maths runs in your browser — there is no server.
 
 ## 🔗 Open the app
@@ -9,8 +9,9 @@ Every formula is a calculator with a diagram, unit-aware inputs, validation and 
 
 Just open the link in any modern browser on a phone, tablet or computer — nothing to install or sign in to.
 
-- **Find a formula:** pick a section in the menu (☰ on phones, the sidebar on wide screens), or press the 🔍 search icon (shortcut: `Ctrl/Cmd + K` or `/`) and type a title.
+- **Find a topic:** pick a part and chapter in the menu (☰ on phones, the sidebar on wide screens), or press the 🔍 search icon (shortcut: `Ctrl/Cmd + K` or `/`) and type a title.
 - **Use it:** choose what to solve for, type your values (pick units like kΩ or µF from the drop-down) and read the result, the diagram and the step-by-step working.
+- **Share a page or one section:** the share button (top bar) copies the link to the page you are on; the link icon in the corner of each card copies a link straight to that card (e.g. `…/#/topic/ohms-law/variables`).
 - **Install it as an app:** Android/Chrome → menu → *Install app*. iPhone/iPad Safari → Share → *Add to Home Screen*. After the first visit it also works offline.
 
 ## Develop

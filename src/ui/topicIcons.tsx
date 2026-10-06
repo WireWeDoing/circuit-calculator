@@ -61,6 +61,16 @@ const GLYPHS: Record<string, string> = {
   thermometer: D('M10 3a2 2 0 0 1 4 0v10a4 4 0 1 1-4 0z', 'M12 8v9'),
   antenna: D('M12 22V10', 'M6 5c-2 3-2 6 0 9M18 5c2 3 2 6 0 9M9 7c-1 2-1 3 0 5M15 7c1 2 1 3 0 5', 'M12 10a1.2 1.2 0 1 0 .01 0'),
   dipole: D('M12 2v8M12 14v8M8 10h8M8 14h8'),
+  // instruments & bench
+  multimeter: D('M6 2h12v20H6z', 'M8.5 4.5h7v5h-7z', 'M12 16a2.5 2.5 0 1 0 .01 0'),
+  scope: D('M2 4h20v14H2z', 'M7 22h10', 'M4 13c2-6 4-6 6 0s4 6 6 0 3-5 4-3'),
+  logic: D('M2 8h4V4h5v4h4V4h7', 'M2 20h6v-4h4v4h3v-4h7'),
+  waves: D('M2 8c2-5 4-5 6 0s4 5 6 0', 'M2 17h4v-4h4v4h4v-4h4'),
+  schematic: D('M2 6h5l1.5-3 3 6 3-6 1.5 3h6', 'M4 6v12h16V6', 'M10 18v-4M14 18v-4M8 14h4M12 14h4'),
+  breadboard: D('M2 4h20v16H2z', 'M2 12h20', 'M6 7h.01M10 7h.01M14 7h.01M18 7h.01M6 16h.01M10 16h.01M14 16h.01M18 16h.01'),
+  warning: D('M12 3l10 18H2z', 'M12 9v6M12 18h.01'),
+  opamp: D('M7 3v18l14-9z', 'M2 8h5M2 16h5M21 12h2', 'M9 8h3M9 16h3M10.5 14.5v3'),
+  regulator: D('M8 6h8v10H8z', 'M1 10h7M16 10h7M12 16v6', 'M10 9h4'),
 }
 
 /** formula id → [glyph, badge]. Every topic needs a unique pair (checked by tests/nav.test.tsx). */
@@ -91,6 +101,13 @@ export const TOPIC_ICONS: Record<string, [glyph: keyof typeof GLYPHS, badge: str
   'p13-several-leds': ['led', 'n'], 'p14-zener': ['zener', ''], 'p15-transformer-rectifier': ['transformer', ''], 'p16-heat': ['thermometer', 'θ'],
   'p17-bjt-switch': ['bjt', 'sw'], 'p18-bjt-bias': ['bjt', 'Q'], 'p19-mosfet-switch': ['mosfet', 'sw'],
   'p20-internal-resistance': ['battery', 'Ri'], 'p21-battery-packs': ['pack', ''],
+  // reference pages and calculators beyond the cheat sheet
+  'vir-explained': ['bolt', 'VIR'], 'schematic-symbols': ['schematic', ''], breadboard: ['breadboard', ''], 'bench-safety': ['warning', ''],
+  multimeter: ['multimeter', ''], 'meter-loading': ['multimeter', 'Rin'], 'burden-voltage': ['multimeter', 'A'],
+  'signals-explained': ['waves', ''], 'waveform-values': ['waves', 'rms'],
+  oscilloscope: ['scope', ''], 'scope-reading': ['scope', 'div'], 'rise-time-bandwidth': ['scope', 'tr'],
+  'logic-analyser': ['logic', ''], 'logic-levels': ['logic', 'NM'], 'analyser-sample-rate': ['logic', 'fs'],
+  'e-series': ['resistor', 'E12'], 'capacitor-code': ['capacitor', '104'], 'op-amp-gain': ['opamp', ''], 'linear-regulator': ['regulator', ''],
 }
 
 const badgeSize = (b: string) => (b.length <= 1 ? 9.5 : b.length === 2 ? 8 : b.length === 3 ? 7 : 6)

@@ -9,8 +9,9 @@ The app is **data-driven**: a formula is one `Formula` object. The UI, search, n
 
 ## 0. Before you start
 1. Find the formula in `docs/Electronics_Formulas_Cheat_Sheet.pdf` (`pdftotext -layout`) — or get the source from the user. **Take the worked example from the source; never invent expected values.**
-2. Pick the section file in `src/formulas/` (`s01.ts` … `s17b.ts`). Section ids live in `src/formulas/sections.ts`.
-3. Check `docs/TASKS.md`; tick/add the row when done.
+2. Pick the file in `src/formulas/`: cheat-sheet formulas go in their section file (`s01.ts` … `s17b.ts`, with `section`/`page`); topics beyond the cheat sheet go in `basics.ts`, `measure.ts`, `signals.ts` or `components.ts` (no `section`).
+3. Decide where it belongs in the book (`src/learn/book.ts`): the chapter whose theory it uses, after the topics it depends on. `tests/book.test.ts` fails until it is placed exactly once.
+4. Check `docs/TASKS.md`; tick/add the row when done.
 
 ## 1. Define it
 ```ts
@@ -27,7 +28,11 @@ export const myFormula = defineFormula({
   modes: [ mode({ id, inputs, outputs, equation, compute, check?, warn?, steps, examples }) ],
 })
 ```
-Export it in the section array (`export const s05 = [...]`) — `formulas/index.ts` already spreads sections. A brand-new file must also be added to `FORMULAS` in `formulas/index.ts`.
+Export it in the file's array (`export const s05 = [...]`) — `formulas/index.ts` already spreads them. A brand-new file must also be added to `FORMULAS` in `formulas/index.ts`. Add its id to a chapter's `items` in `src/learn/book.ts` and give it a unique `[glyph, badge]` in `src/ui/topicIcons.tsx`.
+
+Cards on a topic page must be `AnchorCard`s (`src/ui/anchors.tsx`, unique `id`, short `label`) so each one gets its own share link; the generic tests check this.
+
+A how-to page with no calculation (like “Using a multimeter”) has `modes: []`, `fields: []` and an `article` (headings with text, bullets, a table and/or a diagram id).
 
 Rules:
 - **`compute` works in BASE units** (V, A, Ω, F, H, Hz, s, W, m, J, C). The engine converts user prefixes (kΩ, µF…) before calling it. Never convert inside `compute`, except where the formula itself needs it (e.g. FSPL km/MHz).

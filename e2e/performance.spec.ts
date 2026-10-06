@@ -30,7 +30,7 @@ test.describe('interaction budgets (4× CPU throttle)', () => {
   test('expanding and collapsing sidebar branches is instant', async ({ page }) => {
     await page.goto('/'); await page.waitForTimeout(500); await throttled(page)
     const toggleAll = () => page.evaluate(async () => {
-      const ids = ['s2', 's3', 's4', 's5', 's6']
+      const ids = ['components', 'resistors', 'capacitors', 'inductors', 'diodes-leds'] // a part, then four of its chapters
       const click = async (id: string) => {
         const t0 = performance.now()
         ;(document.querySelector(`[data-testid="toggle-${id}"]`) as HTMLElement).click()
@@ -39,7 +39,7 @@ test.describe('interaction budgets (4× CPU throttle)', () => {
       }
       const expand: number[] = [], collapse: number[] = []
       for (const id of ids) expand.push(await click(id))
-      for (const id of ids) collapse.push(await click(id))
+      for (const id of [...ids].reverse()) collapse.push(await click(id)) // chapters first, then the part
       return { expand, collapse } // ends with everything collapsed again, so attempts are repeatable
     })
     let best = { expand: Infinity, collapse: Infinity }
@@ -51,17 +51,17 @@ test.describe('interaction budgets (4× CPU throttle)', () => {
     expect(best.collapse, `collapse median ${Math.round(best.collapse)} ms (budget 150)`).toBeLessThanOrEqual(150)
   })
 
-  test('opening topics and section pages is quick', async ({ page }) => {
+  test('opening topics, chapter pages and home is quick', async ({ page }) => {
     await page.goto('/'); await page.waitForTimeout(500); await throttled(page)
     const go = (hash: string) => page.evaluate(async (h) => {
       const t0 = performance.now(); location.hash = h
       await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))
       return performance.now() - t0
     }, hash)
-    await go('#/f/rc-charging') // warm-up: first render JIT-compiles the page components
-    await budget('open a topic', 300, async () => { const o: number[] = []; for (const h of ['#/f/voltage-divider', '#/f/ohms-law', '#/f/r-parallel-n', '#/f/led-resistor', '#/f/p9-time-to-voltage']) { o.push(await go(h)); await page.waitForTimeout(80) } return o })
-    await budget('open §17 (25 diagram thumbnails)', 250, async () => { const o: number[] = []; for (const h of ['#/s/s17', '#/s/s3', '#/s/s17', '#/s/s2', '#/s/s17']) { o.push(await go(h)); await page.waitForTimeout(80) } return o })
-    await budget('open home', 250, async () => { const o: number[] = []; for (const h of ['#/', '#/s/s3', '#/', '#/s/s2', '#/']) { o.push(await go(h)); await page.waitForTimeout(80) } return o })
+    await go('#/topic/rc-charging') // warm-up: first render JIT-compiles the page components
+    await budget('open a topic', 300, async () => { const o: number[] = []; for (const h of ['#/topic/voltage-divider', '#/topic/ohms-law', '#/topic/r-parallel-n', '#/topic/led-resistor', '#/topic/p9-time-to-voltage']) { o.push(await go(h)); await page.waitForTimeout(80) } return o })
+    await budget('open a chapter (up to 14 diagram thumbnails)', 250, async () => { const o: number[] = []; for (const h of ['#/chapter/resistors', '#/chapter/capacitors', '#/chapter/resistors', '#/chapter/ac-filters', '#/chapter/resistors']) { o.push(await go(h)); await page.waitForTimeout(80) } return o })
+    await budget('open home', 250, async () => { const o: number[] = []; for (const h of ['#/', '#/chapter/capacitors', '#/', '#/chapter/resistors', '#/']) { o.push(await go(h)); await page.waitForTimeout(80) } return o })
   })
 
   test('opening search is quick', async ({ page }) => {
@@ -77,7 +77,7 @@ test.describe('interaction budgets (4× CPU throttle)', () => {
   })
 
   test('typing stays responsive on the heaviest calculator (10 parallel resistors + table + diagram)', async ({ page }) => {
-    await page.goto('/#/f/r-parallel-n')
+    await page.goto('/#/topic/r-parallel-n')
     await page.getByTestId('mode-withV').click()
     for (let i = 0; i < 8; i++) await page.getByRole('button', { name: 'Add another' }).click()
     const vals = ['100', '220', '330', '470', '680', '1000', '2200', '4700', '10000', '47000']

@@ -1,31 +1,32 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'
-import { FORMULAS, SECTIONS } from '../src/formulas/index.ts'
+import { FORMULAS } from '../src/formulas/index.ts'
+import { CHAPTERS } from '../src/learn/book.ts'
 import { watchErrors } from './helpers.ts'
 
 const open = async (page: Page) => { await page.getByTestId('search-button').click(); await expect(page.getByTestId('search-input')).toBeFocused() }
 const heading = (page: Page, name: string | RegExp) => page.getByRole('heading', { level: 1, name })
 
 test.describe('search dialog', () => {
-  test('icon in the app bar opens it; typing finds a section by title; click opens the section', async ({ page }) => {
+  test('icon in the app bar opens it; typing finds a chapter by title; click opens the chapter', async ({ page }) => {
     const w = watchErrors(page)
     await page.goto('/')
     await open(page)
     await page.getByTestId('search-input').fill('capacitors')
     const first = page.getByTestId('search-results').getByRole('option').first()
-    await expect(first).toHaveAttribute('data-testid', 'result-section-s3')
+    await expect(first).toHaveAttribute('data-testid', 'result-chapter-capacitors')
     await first.click()
-    await expect(heading(page, 'Capacitors')).toBeVisible()
+    await expect(heading(page, '4.3 Capacitors')).toBeVisible()
     await expect(page.getByTestId('search-input')).toHaveCount(0)
     w.expectClean()
   })
 
-  test('every section is findable by its title', async ({ page }) => {
+  test('every chapter is findable by its number and title', async ({ page }) => {
     await page.goto('/')
     await open(page)
-    for (const s of SECTIONS) {
-      await page.getByTestId('search-input').fill(s.title)
-      await expect(page.getByTestId('search-results').getByRole('option').first(), s.title).toHaveAttribute('data-testid', `result-section-${s.id}`)
+    for (const c of CHAPTERS) {
+      await page.getByTestId('search-input').fill(`${c.number} ${c.title}`)
+      await expect(page.getByTestId('search-results').getByRole('option').first(), c.title).toHaveAttribute('data-testid', `result-chapter-${c.id}`)
     }
   })
 
@@ -56,7 +57,7 @@ test.describe('search dialog', () => {
 
   test('Ctrl+K and "/" open it', async ({ page, isMobile }) => {
     test.skip(isMobile, 'keyboard shortcuts')
-    await page.goto('/#/f/ohms-law')
+    await page.goto('/#/topic/ohms-law')
     await expect(heading(page, "Ohm's law")).toBeVisible() // the app has mounted and its shortcut listener is installed
     await page.keyboard.press('Control+k')
     await expect(page.getByTestId('search-input')).toBeFocused()
@@ -66,13 +67,13 @@ test.describe('search dialog', () => {
     await expect(page.getByTestId('search-input')).toBeFocused()
   })
 
-  test('no match → friendly message; clearing shows the sections again', async ({ page }) => {
+  test('no match → friendly message; clearing shows the chapters again', async ({ page }) => {
     await page.goto('/')
     await open(page)
     await page.getByTestId('search-input').fill('xxxyyy')
     await expect(page.getByTestId('search-empty')).toBeVisible()
     await page.getByTestId('search-input').fill('')
-    await expect(page.getByTestId('search-results').getByRole('option')).toHaveCount(SECTIONS.length)
+    await expect(page.getByTestId('search-results').getByRole('option')).toHaveCount(CHAPTERS.length)
   })
 
   test('results lead to real pages: every topic title opens its own page', async ({ page }) => {
@@ -87,7 +88,7 @@ test.describe('search dialog', () => {
   })
 
   test('opening a result is remembered by the Back button', async ({ page }) => {
-    await page.goto('/#/s/s2')
+    await page.goto('/#/chapter/resistors')
     await open(page)
     await page.getByTestId('search-input').fill('inductive reactance')
     await page.keyboard.press('Enter')
@@ -117,7 +118,7 @@ test.describe('search dialog', () => {
       await page.goto('/')
       await open(page)
       await page.getByTestId('search-input').fill('cap')
-      await expect(page.getByTestId('result-section-s3')).toBeVisible()
+      await expect(page.getByTestId('result-chapter-capacitors')).toBeVisible()
       const res = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze()
       expect(res.violations.map((v) => `${v.id}: ${v.help} ${v.nodes[0]?.html.slice(0, 140)}`)).toEqual([])
     })

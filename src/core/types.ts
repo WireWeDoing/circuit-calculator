@@ -79,9 +79,8 @@ export type VisualId = string
 
 export interface Formula {
   id: string
-  section: string
-  /** id of a sub-section inside `section` (see Section.groups) */
-  group?: string
+  /** cheat-sheet section (§) this topic comes from; absent for topics added beyond the cheat sheet */
+  section?: string
   title: string
   /** the formula as printed in the cheat sheet */
   equation: string
@@ -106,18 +105,24 @@ export interface Formula {
   reference?: { rows: Array<[string, string]>; note?: string }
   /** custom interactive tool instead of the generic calculator */
   tool?: string
+  /** reference-page content (how-to pages such as "Using a multimeter"), shown after the diagram */
+  article?: ArticleBlock[]
 }
 
-export interface Group {
-  id: string
-  title: string
+/** One titled block of a reference page. Any combination of text, bullet points, a table and a diagram. */
+export interface ArticleBlock {
+  heading: string
+  text?: string
+  bullets?: string[]
+  /** first row = column headings */
+  table?: string[][]
+  /** a diagram id from src/visuals (drawn with empty inputs) */
+  visual?: string
 }
 
 export interface Section {
   id: string
   hero: string
-  /** optional sub-sections (the cheat sheet's 17.1, 17.2 …). Topics without a group sit directly under the section. */
-  groups?: Group[]
   number: string
   title: string
   blurb: string

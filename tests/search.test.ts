@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { FORMULAS, SECTIONS } from '../src/formulas/index.ts'
+import { FORMULAS } from '../src/formulas/index.ts'
+import { CHAPTERS, PARTS } from '../src/learn/book.ts'
 import { normalize, search, searchIndex } from '../src/formulas/search.ts'
 
 const ids = (q: string, n = 50) => search(q, n).map((h) => `${h.kind}:${h.id}`)
@@ -15,20 +16,22 @@ describe('normalize', () => {
 })
 
 describe('search index', () => {
-  it('has one entry per section and per topic, with working links', () => {
+  it('has one entry per part, chapter and topic, with their permanent links', () => {
     const idx = searchIndex()
-    expect(idx.filter((e) => e.kind === 'section')).toHaveLength(SECTIONS.length)
+    expect(idx.filter((e) => e.kind === 'part')).toHaveLength(PARTS.length)
+    expect(idx.filter((e) => e.kind === 'chapter')).toHaveLength(CHAPTERS.length)
     expect(idx.filter((e) => e.kind === 'topic')).toHaveLength(FORMULAS.length)
-    for (const e of idx) expect(e.href).toMatch(/^#\/(s|f)\//)
+    for (const e of idx) expect(e.href).toBe(`#/${e.kind}/${e.id}`)
   })
 })
 
 describe('search by title', () => {
-  it('finds every section by its own title (and number)', () => {
-    for (const s of SECTIONS) {
-      expect(ids(s.title)[0], `section "${s.title}"`).toBe(`section:${s.id}`)
-      expect(ids(`${s.number}. ${s.title}`)[0]).toBe(`section:${s.id}`)
+  it('finds every chapter and part by its own title (and number)', () => {
+    for (const c of CHAPTERS) {
+      expect(ids(c.title, 5), `chapter "${c.title}"`).toContain(`chapter:${c.id}`)
+      expect(ids(`${c.number} ${c.title}`)[0]).toBe(`chapter:${c.id}`)
     }
+    for (const p of PARTS) expect(ids(p.title, 5), `part "${p.title}"`).toContain(`part:${p.id}`)
   })
   it('finds every topic by its own title', () => {
     for (const f of FORMULAS) expect(ids(f.title, 5), `topic "${f.title}"`).toContain(`topic:${f.id}`)
@@ -41,7 +44,7 @@ describe('search by title', () => {
   })
   it('matches partial words: "cap" finds Capacitors and its topics', () => {
     const r = ids('cap')
-    expect(r[0]).toBe('section:s3')
+    expect(r[0]).toBe('chapter:capacitors')
     expect(r).toContain('topic:cap-charge')
     expect(r).toContain('topic:cap-reactance')
   })
@@ -51,24 +54,29 @@ describe('search by title', () => {
     expect(r.map((h) => h.id)).toEqual(expect.arrayContaining(['r-series', 'c-series', 'l-series']))
     expect(search('series zzz')).toEqual([])
   })
-  it('ranks: exact › starts-with › word-start › inside, sections before topics on equal rank', () => {
-    expect(ids('resistors')[0]).toBe('section:s2') // exact section title
+  it('ranks: exact › starts-with › word-start › inside, chapters before topics on equal rank', () => {
+    expect(ids('resistors')[0]).toBe('chapter:resistors') // exact chapter title
     const r = search('led')
     expect(r[0]!.kind === 'section' ? r[0]!.id : r[0]!.title).toBeTruthy()
     const scores = r.map((h) => h.score)
     expect(scores).toEqual([...scores].sort((a, b) => b - a)) // sorted best first
-    expect(ids('power')[0]).toMatch(/power|s1|s15|s12/) // something titled Power leads
+    expect(ids('power')[0]).toMatch(/power/) // something titled Power leads
     expect(search('power').slice(0, 2).some((h) => /power/i.test(h.title))).toBe(true)
   })
-  it('searching a section name also lists that section\'s topics (after the section itself)', () => {
+  it('searching a chapter name also lists that chapter\'s topics (after the chapter itself)', () => {
     const r = ids('mosfets')
-    expect(r[0]).toBe('section:s8')
+    expect(r[0]).toBe('chapter:mosfets')
     expect(r).toEqual(expect.arrayContaining(['topic:mosfet-power', 'topic:mosfet-gate-current', 'topic:mosfet-logic-level']))
   })
-  it('finds §17 topics and tells you the sub-section', () => {
+  it('finds worked problems and tells you the chapter they are in', () => {
     const hit = search('zener').find((h) => h.id === 'p14-zener')!
-    expect(hit.groupTitle).toBe('17.4 LEDs, Zener diodes and power supplies')
-    expect(hit.sectionTitle).toMatch(/^17\./)
+    expect(hit.where).toBe('4.5 Diodes & LEDs')
+    expect(search('resistors').find((h) => h.kind === 'chapter')!.where).toBe('Part 4 · Components')
+  })
+  it('finds the new beginner pages', () => {
+    expect(ids('multimeter')).toContain('topic:multimeter')
+    expect(ids('oscilloscope')).toContain('topic:oscilloscope')
+    expect(ids('logic analyser')).toContain('topic:logic-analyser')
   })
   it('handles junk gracefully', () => {
     expect(search('')).toEqual([])

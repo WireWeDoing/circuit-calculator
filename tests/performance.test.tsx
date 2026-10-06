@@ -8,55 +8,62 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { formulaById } from '../src/formulas/index.ts'
 import { Calculator } from '../src/ui/Calculator.tsx'
 import { ModeTabs } from '../src/ui/ModeTabs.tsx'
-import { navHooks, NavTree } from '../src/ui/NavTree.tsx'
+import { chapterById, PARTS } from '../src/learn/book.ts'
+import { locate, navHooks, NavTree } from '../src/ui/NavTree.tsx'
 import { inputHooks } from '../src/ui/QuantityInput.tsx'
 
 beforeEach(() => { localStorage.clear() })
 afterEach(() => { navHooks.onRender = undefined; inputHooks.onRender = undefined })
 
-const counter = () => { const c = { leaf: 0, section: 0, group: 0 }; navHooks.onRender = (k) => { c[k]++ }; return c }
+const counter = () => { const c = { leaf: 0, part: 0, chapter: 0 }; navHooks.onRender = (k) => { c[k]++ }; return c }
+const none = {}
 
 describe('sidebar tree re-renders only what changed', () => {
-  it('expanding one branch renders that branch\'s rows, not the other 17 sections', async () => {
+  it('expanding one branch renders that branch\'s rows, not the other parts and chapters', async () => {
     const user = userEvent.setup()
-    render(<NavTree />)
+    render(<NavTree here={none} />)
+    await user.click(screen.getByTestId('toggle-components'))
     const c = counter()
-    await user.click(screen.getByTestId('toggle-s2'))
-    expect(c.leaf).toBe(6) // the six topics that appeared
-    expect(c.section).toBe(1) // only the section whose state changed
-    await user.click(screen.getByTestId('toggle-s3'))
-    expect(c.leaf).toBe(6 + 9)
-    expect(c.section).toBe(1 + 1) // s2 did NOT re-render when s3 opened
+    await user.click(screen.getByTestId('toggle-wires'))
+    expect(c.leaf).toBe(2) // the two topics that appeared
+    expect(c.chapter).toBe(1) // only the chapter whose state changed
+    await user.click(screen.getByTestId('toggle-resistors'))
+    expect(c.leaf).toBe(2 + chapterById('resistors')!.items.length)
+    expect(c.chapter).toBe(1 + 1) // "wires" did NOT re-render when "resistors" opened
   })
 
   it('collapsing renders nothing new', async () => {
     const user = userEvent.setup()
-    render(<NavTree />)
-    await user.click(screen.getByTestId('toggle-s4'))
+    render(<NavTree here={none} />)
+    await user.click(screen.getByTestId('toggle-measurements'))
+    await user.click(screen.getByTestId('toggle-multimeter'))
     const c = counter()
-    await user.click(screen.getByTestId('toggle-s4'))
+    await user.click(screen.getByTestId('toggle-multimeter'))
     expect(c.leaf).toBe(0)
   })
 
   it('changing the current page re-renders only the two rows involved', () => {
-    const { rerender } = render(<NavTree sectionId="s3" formulaId="rc-tau" />)
+    const { rerender } = render(<NavTree here={locate({ topic: 'rc-tau' })} />)
     const c = counter()
-    rerender(<NavTree sectionId="s3" formulaId="rc-charging" />)
+    rerender(<NavTree here={locate({ topic: 'rc-charging' })} />)
     expect(c.leaf).toBe(2) // the row that lost the highlight and the one that gained it
-    expect(c.section).toBeLessThanOrEqual(1)
+    expect(c.chapter).toBeLessThanOrEqual(1)
   })
 
-  it('a long list stays cheap: opening every section renders each topic exactly once', async () => {
+  it('a long list stays cheap: opening every chapter renders each topic exactly once', async () => {
     const user = userEvent.setup()
-    render(<NavTree />)
+    render(<NavTree here={none} />)
     const c = counter()
-    for (const id of ['s1', 's2', 's3', 's4', 's5', 's6', 's7', 's8']) await user.click(screen.getByTestId(`toggle-${id}`))
+    for (const p of PARTS) {
+      await user.click(screen.getByTestId(`toggle-${p.id}`))
+      for (const ch of p.chapters) await user.click(screen.getByTestId(`toggle-${ch.id}`))
+    }
     const topics = document.querySelectorAll('[data-testid^="nav-topic-"]').length
     expect(c.leaf).toBe(topics)
   })
 
   it('the sidebar uses plain elements for rows (no per-row styled wrappers)', () => {
-    render(<NavTree sectionId="s2" formulaId="r-series" />)
+    render(<NavTree here={locate({ topic: 'r-series' })} />)
     const row = screen.getByTestId('nav-topic-r-series')
     expect(row.tagName).toBe('A')
     expect(row.className).not.toMatch(/Mui|css-/)
@@ -64,10 +71,11 @@ describe('sidebar tree re-renders only what changed', () => {
 
   it('expand/collapse is instant: children are mounted/unmounted, with no animation at all (a fade also made axe measure half-transparent text)', async () => {
     const user = userEvent.setup()
-    render(<NavTree />)
-    await user.click(screen.getByTestId('toggle-s2'))
+    render(<NavTree here={none} />)
+    await user.click(screen.getByTestId('toggle-components'))
+    await user.click(screen.getByTestId('toggle-resistors'))
     expect(screen.getByTestId('nav-topic-r-series')).toBeVisible() // immediately — no waiting for a transition
-    await user.click(screen.getByTestId('toggle-s2'))
+    await user.click(screen.getByTestId('toggle-resistors'))
     expect(screen.queryByTestId('nav-topic-r-series')).not.toBeInTheDocument()
     expect(document.querySelector('.MuiCollapse-root')).toBeNull()
   })
