@@ -9,7 +9,7 @@ import { SECTIONS } from '../formulas/sections.ts'
  *   #/chapter/<chapter id>  a chapter
  *   #/topic/<topic id>      a calculator, worked problem or reference page
  *   #/topic/<topic id>/<section>  the same page, scrolled to one of its cards (what the card's link button copies)
- * Anything after "?" is kept as `query` (reserved for sharing calculator inputs later).
+ * Anything after "?" is kept as `query` (the calculator inputs of a shared link — see `shareState.ts`).
  * Old cheat-sheet links (#/f/<id>, #/s/<section>) still resolve — see `legacyTarget`.
  */
 export type Route =

@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import Accordion from '@mui/material/Accordion'
 import AccordionDetails from '@mui/material/AccordionDetails'
 import AccordionSummary from '@mui/material/AccordionSummary'
@@ -32,8 +32,9 @@ import { Article } from './Article.tsx'
 /** cards that only exist once a result is shown fall back to the Result card when the link is opened */
 const FALLBACK: Record<string, string> = { steps: 'result', breakdown: 'result' }
 
-export function FormulaPage({ formula, anchor }: { formula: Formula; anchor?: string }) {
-  const ctx = useMemo(() => ({ topicId: formula.id, active: anchor }), [formula.id, anchor])
+export function FormulaPage({ formula, anchor, query }: { formula: Formula; anchor?: string; query?: string }) {
+  const shareQuery = useRef<() => string>(undefined)
+  const ctx = useMemo(() => ({ topicId: formula.id, active: anchor, shareQuery }), [formula.id, anchor])
   // a link to one card (…/#/topic/<id>/<card>): scroll to it once the page is drawn
   useEffect(() => {
     if (!anchor) return
@@ -61,8 +62,8 @@ export function FormulaPage({ formula, anchor }: { formula: Formula; anchor?: st
         )}
       </Box>
 
-      {formula.modes.length > 0 && <Calculator key={formula.id} formula={formula} />}
-      {Tool && <Tool />}
+      {formula.modes.length > 0 && <Calculator key={`${formula.id}?${query ?? ""}`} formula={formula} query={query} />}
+      {Tool && <Tool key={query ?? ''} query={query} />}
       {formula.modes.length === 0 && !Tool && Visual && <AnchorCard id="diagram" label="Diagram"><CardContent><Visual v={{}} lists={{}} mode="" /></CardContent></AnchorCard>}
 
       {formula.article && <Article blocks={formula.article} />}

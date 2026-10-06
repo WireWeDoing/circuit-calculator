@@ -141,7 +141,7 @@ function AppShell({ offlineReady = false, onDismissOffline }: { offlineReady?: b
         {route.page === 'home' && <Home />}
         {route.page === 'part' && <PartPage id={route.id} />}
         {route.page === 'chapter' && <ChapterPage id={route.id} />}
-        {route.page === 'topic' && (formula ? <FormulaPage key={formula.id} formula={formula} anchor={route.anchor} /> : <Typography role="alert">Topic not found. <a href="#/">Go home</a>.</Typography>)}
+        {route.page === 'topic' && (formula ? <FormulaPage key={formula.id} formula={formula} anchor={route.anchor} query={route.query} /> : <Typography role="alert">Topic not found. <a href="#/">Go home</a>.</Typography>)}
         <Typography variant="caption" color="text.secondary" component="p" sx={{ mt: 4 }}>
           Quick reference only — always confirm device-specific limits (VCE(max), RDS(on), PD(max), pin currents) against the actual datasheet. PCB and RF formulas are simplified approximations.
         </Typography>

@@ -12,12 +12,12 @@ import { useToast } from './useToast.ts'
  * `…/#/topic/<topic>/<anchor>`, which opens the page scrolled to this card.
  */
 export function AnchorCard({ id, label, children, sx, ...rest }: Omit<CardProps, 'id'> & { id: string; label: string; children: ReactNode }) {
-  const { topicId, active } = useContext(AnchorContext)
+  const { topicId, active, shareQuery } = useContext(AnchorContext)
   const notify = useToast()
   const linked = active === id
   const copy = async () => {
     if (!topicId) return
-    const ok = await copyText(absoluteUrl(hrefOf({ page: 'topic', id: topicId, anchor: id })))
+    const ok = await copyText(absoluteUrl(hrefOf({ page: 'topic', id: topicId, anchor: id, query: shareQuery?.current?.() || undefined })))
     notify(ok ? `Link to “${label}” copied` : 'Could not copy — copy the address from the browser bar')
   }
   return (

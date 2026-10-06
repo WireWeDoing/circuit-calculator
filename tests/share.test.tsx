@@ -68,7 +68,58 @@ describe('share button in the app bar', () => {
 })
 
 describe('a link button on every card of a topic page', () => {
-  const page = (id: string, anchor?: string) => render(<ToastProvider><FormulaPage formula={formulaById(id)!} anchor={anchor} /></ToastProvider>)
+  const page = (id: string, anchor?: string, query?: string) => render(<ToastProvider><FormulaPage formula={formulaById(id)!} anchor={anchor} query={query} /></ToastProvider>)
+
+  it('puts the typed values in the copied link, and a link with values shows the answer straight away', async () => {
+    const user = userEvent.setup()
+    const first = page('ohms-law')
+    await user.type(screen.getByTestId('in-I'), '20')
+    await user.selectOptions(screen.getByTestId('unit-in-I'), 'mA')
+    await user.type(screen.getByTestId('in-R'), '4.7')
+    await user.click(screen.getByRole('button', { name: 'Copy link to Result' }))
+    const url = new URL(await navigator.clipboard.readText())
+    const query = url.hash.split('?')[1]!
+    expect(url.hash.startsWith('#/topic/ohms-law/result?')).toBe(true)
+    first.unmount()
+    page('ohms-law', 'result', query)
+    expect(screen.getByTestId('in-I')).toHaveValue('20')
+    expect(screen.getByTestId('unit-in-I')).toHaveValue('mA')
+    expect(screen.getByTestId('in-R')).toHaveValue('4.7')
+    expect(screen.getByTestId('result')).toHaveAttribute('data-status', 'ok')
+  })
+  it('carries the values of the tools (colour code, prefix converter, part markings, battery) in the link', async () => {
+    const user = userEvent.setup()
+    const roundTrip = async (id: string, card: string) => {
+      await user.click(screen.getByRole('button', { name: new RegExp(`^Copy link to ${card}`) }))
+      return new URL(await navigator.clipboard.readText()).hash.split('?')[1]!
+    }
+    const colour = page('resistor-colour-code')
+    await user.selectOptions(screen.getByTestId('band-0'), 'red')
+    await user.type(screen.getByTestId('colour-value'), '330')
+    const cq = await roundTrip('resistor-colour-code', 'Bands → value')
+    colour.unmount()
+    page('resistor-colour-code', undefined, cq)
+    expect(screen.getByTestId('band-0')).toHaveValue('red')
+    expect(screen.getByTestId('colour-value')).toHaveValue('330')
+
+    const units = page('units-and-prefixes')
+    await user.selectOptions(screen.getByTestId('prefix-to'), 'm')
+    await user.clear(screen.getByTestId('marking-input')); await user.type(screen.getByTestId('marking-input'), '2M2')
+    const uq = await roundTrip('units-and-prefixes', 'Prefix converter')
+    units.unmount()
+    page('units-and-prefixes', undefined, uq)
+    expect(screen.getByTestId('prefix-to')).toHaveValue('m')
+    expect(screen.getByTestId('marking-input')).toHaveValue('2M2')
+    expect(screen.getByTestId('marking-result')).toHaveTextContent('2.2 MΩ')
+  })
+  it('ignores a bad battery voltage in a link', () => {
+    page('state-of-charge', undefined, 'volts=99')
+    expect(screen.getByTestId('soc-volts')).toHaveTextContent('3.70 V')
+  })
+  it('ignores unknown fields and units in a hand-edited link', () => {
+    page('ohms-law', undefined, 'mode=nope&bogus=1&I=5~furlong')
+    expect(screen.getByTestId('in-I')).toHaveValue('5')
+  })
 
   it('copies the URL of that card and says so', async () => {
     const user = userEvent.setup()

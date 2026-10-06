@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import AddIcon from '@mui/icons-material/Add'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import DeleteOutlinedIcon from '@mui/icons-material/DeleteOutlined'
@@ -20,6 +20,8 @@ import ToggleButton from '@mui/material/ToggleButton'
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup'
 import { parseNumber } from './input.ts'
 import { AnchorCard } from './anchors.tsx'
+import { AnchorContext } from './anchorContext.ts'
+import { decodeState, encodeState } from './shareState.ts'
 import { Breakdown } from './Breakdown.tsx'
 import { ModeTabs } from './ModeTabs.tsx'
 import { QuantityInput, type Entry } from './QuantityInput.tsx'
@@ -43,15 +45,23 @@ const entryFor = (f: Field, x: number): Entry => {
 
 const readFlow = (): FlowMode => { try { return localStorage.getItem('flow') === 'electron' ? 'electron' : 'conventional' } catch { return 'conventional' } }
 
-export function Calculator({ formula }: { formula: Formula }) {
+export function Calculator({ formula, query }: { formula: Formula; query?: string }) {
+  // a shared link (…?mode=…&R=4.7~kΩ) restores the mode and the typed values on first render
+  const shared = useMemo(() => decodeState(formula, query), []) // eslint-disable-line react-hooks/exhaustive-deps
   const [flow, setFlowState] = useState<FlowMode>(readFlow)
   const setFlow = (f: FlowMode) => { setFlowState(f); try { localStorage.setItem('flow', f) } catch { /* private mode */ } }
-  const [modeId, setModeId] = useState(formula.modes[0]!.id)
-  const [entries, setEntries] = useState<Record<string, Entry>>({})
-  const [lists, setLists] = useState<Record<string, Entry[]>>({})
+  const [modeId, setModeId] = useState(shared.modeId ?? formula.modes[0]!.id)
+  const [entries, setEntries] = useState<Record<string, Entry>>(shared.entries)
+  const [lists, setLists] = useState<Record<string, Entry[]>>(shared.lists)
   const [copied, setCopied] = useState(false)
 
   const mode = modeOf(formula, modeId)
+  const { shareQuery: shareQueryRef } = useContext(AnchorContext)
+  useEffect(() => {
+    if (!shareQueryRef) return
+    shareQueryRef.current = () => encodeState(formula, modeId, entries, lists)
+    return () => { shareQueryRef.current = undefined }
+  }, [shareQueryRef, formula, modeId, entries, lists])
   const tabs = useMemo(() => formula.modes.map((m) => ({ id: m.id, label: modeLabel(formula, m) })), [formula])
 
   /** one shared empty entry per field (entries are replaced, never mutated), so untouched rows keep identical props */

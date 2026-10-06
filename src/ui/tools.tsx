@@ -1,4 +1,4 @@
-import { useMemo, useState, type ComponentType } from 'react'
+import { useContext, useEffect, useMemo, useState, type ComponentType } from 'react'
 import Alert from '@mui/material/Alert'
 import Box from '@mui/material/Box'
 import CardContent from '@mui/material/CardContent'
@@ -19,6 +19,7 @@ import { decodeCapacitor3, decodeResistor3, parseRKM, SHORTCUTS } from '../core/
 import { liIonSoc } from '../core/soc.ts'
 import { fmtNum, fmtSI } from '../core/units.ts'
 import { AnchorCard } from './anchors.tsx'
+import { AnchorContext } from './anchorContext.ts'
 import { QuantityInput, type Entry } from './QuantityInput.tsx'
 import { parseNumber } from './input.ts'
 import { Row } from './layout.tsx'
@@ -30,16 +31,40 @@ import { field } from '../core/define.ts'
 
 const PREFIXES: Array<[string, number]> = [['G', 1e9], ['M', 1e6], ['k', 1e3], ['(none)', 1], ['m', 1e-3], ['µ', 1e-6], ['n', 1e-9], ['p', 1e-12]]
 
-function ColourCodeTool() {
-  const [n, setN] = useState<4 | 5>(4)
-  const [bands, setBands] = useState<string[]>(['brown', 'black', 'red', 'gold'])
+type ToolProps = { query?: string }
+
+/** registers what the cards' link buttons append to their URL: the tool's current values (callers pass `undefined` for defaults, to keep links short) */
+function useShare(current: Record<string, string | undefined>) {
+  const { shareQuery: shareQueryRef } = useContext(AnchorContext)
+  const text = JSON.stringify(current)
+  useEffect(() => {
+    if (!shareQueryRef) return
+    shareQueryRef.current = () => {
+      const p = new URLSearchParams()
+      for (const [k, v] of Object.entries(JSON.parse(text) as Record<string, string | undefined>)) if (v !== undefined) p.set(k, v)
+      return p.toString()
+    }
+    return () => { shareQueryRef.current = undefined }
+  }, [shareQueryRef, text])
+}
+const oneOf = <T extends string>(v: string | null, allowed: readonly T[], fallback: T): T => (allowed as readonly string[]).includes(v ?? '') ? (v as T) : fallback
+
+function ColourCodeTool({ query }: ToolProps) {
+  const q = useMemo(() => new URLSearchParams(query ?? ''), []) // eslint-disable-line react-hooks/exhaustive-deps
+  const [n, setN] = useState<4 | 5>(q.get('n') === '5' ? 5 : 4)
+  const [bands, setBands] = useState<string[]>(() => {
+    const given = (q.get('bands') ?? '').split('-')
+    const size = q.get('n') === '5' ? 5 : 4
+    return given.length === size && given.every((c) => COLOURS[c]) ? given : size === 4 ? ['brown', 'black', 'red', 'gold'] : ['brown', 'black', 'black', 'brown', 'brown']
+  })
   const used = bands.slice(0, n)
   const set = (i: number, c: string) => setBands((b) => b.map((x, j) => (j === i ? c : x)))
   const change = (k: 4 | 5) => { setN(k); setBands(k === 4 ? ['brown', 'black', 'red', 'gold'] : ['brown', 'black', 'black', 'brown', 'brown']) }
   const res = decodeBands(used)
   const roles = n === 4 ? ['Digit 1', 'Digit 2', 'Multiplier', 'Tolerance'] : ['Digit 1', 'Digit 2', 'Digit 3', 'Multiplier', 'Tolerance']
   const allowed = (i: number) => COLOUR_NAMES.filter((c) => (i < n - 2 ? COLOURS[c]!.digit !== undefined : i === n - 2 ? COLOURS[c]!.multiplier !== undefined : COLOURS[c]!.tolerance !== undefined))
-  const [valText, setValText] = useState<Entry>({ text: '', unit: 'Ω' })
+  const [valText, setValText] = useState<Entry>(() => ({ text: q.get('value') ?? '', unit: oneOf(q.get('unit'), ['mΩ', 'Ω', 'kΩ', 'MΩ'], 'Ω') }))
+  useShare({ n: n === 5 ? '5' : undefined, bands: bands.slice(0, n).join('-'), value: valText.text || undefined, unit: valText.text && valText.unit !== 'Ω' ? valText.unit : undefined })
   const want = parseNumber(valText.text)
   const factor = valText.unit === 'kΩ' ? 1e3 : valText.unit === 'MΩ' ? 1e6 : valText.unit === 'mΩ' ? 1e-3 : 1
   const enc = want !== undefined && !Number.isNaN(want) ? encodeBands(want * factor, n === 4 ? 2 : 3, 5) : undefined
@@ -79,12 +104,16 @@ function ColourCodeTool() {
   )
 }
 
-function UnitsTool() {
-  const [v, setV] = useState('4.7')
-  const [from, setFrom] = useState('k')
-  const [to, setTo] = useState('(none)')
-  const [code, setCode] = useState('4k7')
-  const [kind, setKind] = useState<'rkm' | 'r3' | 'c3'>('rkm')
+const KINDS = ['rkm', 'r3', 'c3'] as const
+const PREFIX_NAMES = PREFIXES.map(([p]) => p)
+function UnitsTool({ query }: ToolProps) {
+  const q = useMemo(() => new URLSearchParams(query ?? ''), []) // eslint-disable-line react-hooks/exhaustive-deps
+  const [v, setV] = useState(q.get('v') ?? '4.7')
+  const [from, setFrom] = useState(oneOf(q.get('from'), PREFIX_NAMES, 'k'))
+  const [to, setTo] = useState(oneOf(q.get('to'), PREFIX_NAMES, '(none)'))
+  const [kind, setKind] = useState<'rkm' | 'r3' | 'c3'>(oneOf(q.get('kind'), KINDS, 'rkm'))
+  const [code, setCode] = useState(q.get('code') ?? (kind === 'rkm' ? '4k7' : kind === 'r3' ? '103' : '104'))
+  useShare({ v, from, to, kind, code })
   const f = PREFIXES.find(([p]) => p === from)![1], t = PREFIXES.find(([p]) => p === to)![1]
   const x = parseNumber(v)
   const out = x !== undefined && !Number.isNaN(x) ? (x * f) / t : undefined
@@ -131,8 +160,9 @@ function UnitsTool() {
   )
 }
 
-function SocTool() {
-  const [volts, setVolts] = useState(3.7)
+function SocTool({ query }: ToolProps) {
+  const [volts, setVolts] = useState(() => { const x = Number(new URLSearchParams(query ?? '').get('volts')); return Number.isFinite(x) && x >= 2.8 && x <= 4.3 ? x : 3.7 })
+  useShare({ volts: String(volts) })
   const soc = liIonSoc(volts)
   return (
     <AnchorCard id="state-of-charge" label="Li-ion state of charge"><CardContent>
@@ -179,4 +209,4 @@ function MethodTool() {
   )
 }
 
-export const TOOLS: Record<string, ComponentType> = { colorcode: ColourCodeTool, units: UnitsTool, soc: SocTool, method: MethodTool }
+export const TOOLS: Record<string, ComponentType<ToolProps>> = { colorcode: ColourCodeTool, units: UnitsTool, soc: SocTool, method: MethodTool }
