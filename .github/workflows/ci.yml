@@ -1,0 +1,49 @@
+name: CI
+
+# Full verification on pull requests (and manual runs): lint, types, unit/UI tests, then the browser tests
+# against the production build. Screenshot-baseline tests are skipped here because the baselines were
+# captured with a different font setup than the GitHub runner's; run them locally with `pnpm e2e`.
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+
+      - name: Install Chromium for Playwright
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Browser tests (production build, no screenshot baselines)
+        run: pnpm exec playwright test --grep-invert "visual"
+        env:
+          CI: true
+
+      - name: Keep the Playwright report if something failed
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report
+            test-results
+          retention-days: 7
